@@ -1,2 +1,3 @@
 # SMARTLOGIX
-## Zoso | MechitaZ | Pankko
+## Zoso     | MechitaZ | Pankko
+## Phillipe |  Matías  | Tomás
