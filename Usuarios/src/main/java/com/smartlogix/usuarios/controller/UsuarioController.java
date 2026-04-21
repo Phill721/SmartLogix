@@ -38,16 +38,19 @@ public class UsuarioController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<List<UsuarioResponse>> listarUsuarios() {
         return ResponseEntity.ok(usuarioService.listarUsuarios());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<UsuarioResponse> listarUsuario(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.listarUsuario(id));
     }
 
     @GetMapping("/rol/{rol}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<List<UsuarioResponse>> listarUsuarioPorRol(@PathVariable Rol rol) {
         return ResponseEntity.ok(usuarioService.listarUsuarioPorRol(rol));
     }

@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public UsuarioResponse agregarUsuario(UsuarioRequest request) {
+        if (request.getRol() == Rol.ADMINISTRADOR && !esAdminAutenticado()) {
+            throw new AccessDeniedException("Solo un administrador puede crear usuarios con rol ADMINISTRADOR");
+        }
+
         if (usuarioRepository.existsByNombre(request.getNombre())) {
             throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
         }
@@ -48,6 +55,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public void eliminarUsuario(Long id) {
         Usuario usuario = obtenerUsuarioPorId(id);
+        if (Boolean.TRUE.equals(usuario.getAdminBase())) {
+            throw new AccessDeniedException("No se puede eliminar el administrador base del sistema");
+        }
         usuarioRepository.delete(usuario);
         publicarEvento("ELIMINAR", "Usuario eliminado con ID: " + id);
     }
@@ -55,6 +65,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public UsuarioResponse actualizarUsuario(Long id, UsuarioRequest request) {
         Usuario usuario = obtenerUsuarioPorId(id);
+
+        if (Boolean.TRUE.equals(usuario.getAdminBase())) {
+            throw new AccessDeniedException("El administrador base del sistema es inmutable y no puede modificarse");
+        }
 
         if (!usuario.getNombre().equals(request.getNombre()) && usuarioRepository.existsByNombre(request.getNombre())) {
             throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
@@ -132,5 +146,15 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .mensaje(mensaje)
                 .timestamp(LocalDateTime.now())
                 .build());
+    }
+
+    private boolean esAdminAutenticado() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMINISTRADOR".equals(authority.getAuthority()));
     }
 }
