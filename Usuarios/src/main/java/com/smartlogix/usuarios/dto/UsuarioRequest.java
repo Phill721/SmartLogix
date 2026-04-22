@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UsuarioRequest {
     private String nombre;
+    private String email;
     private String contrasena;
     private Rol rol;
 }

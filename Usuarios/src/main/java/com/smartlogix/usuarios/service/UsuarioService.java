@@ -13,6 +13,8 @@ public interface UsuarioService {
 
     void eliminarUsuario(Long id);
 
+    void desactivarUsuario(Long id);
+
     UsuarioResponse actualizarUsuario(Long id, UsuarioRequest request);
 
     List<UsuarioResponse> listarUsuarios();

@@ -41,10 +41,16 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
         }
 
+        if (usuarioRepository.existsByEmail(request.getEmail())) {
+            throw new UsuarioYaExisteException("El email ya existe: " + request.getEmail());
+        }
+
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
+                .email(request.getEmail())
                 .contrasena(passwordEncoder.encode(request.getContrasena()))
                 .rol(request.getRol())
+                .esActivo(true)
                 .build();
 
         Usuario guardado = usuarioRepository.save(usuario);
@@ -63,6 +69,22 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    public void desactivarUsuario(Long id) {
+        Usuario usuario = obtenerUsuarioPorId(id);
+        if (Boolean.TRUE.equals(usuario.getAdminBase())) {
+            throw new AccessDeniedException("No se puede desactivar el administrador base del sistema");
+        }
+
+        if (Boolean.FALSE.equals(usuario.getEsActivo())) {
+            return;
+        }
+
+        usuario.setEsActivo(false);
+        usuarioRepository.save(usuario);
+        publicarEvento("DESACTIVAR", "Usuario desactivado con ID: " + id);
+    }
+
+    @Override
     public UsuarioResponse actualizarUsuario(Long id, UsuarioRequest request) {
         Usuario usuario = obtenerUsuarioPorId(id);
 
@@ -74,7 +96,12 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
         }
 
+        if (!usuario.getEmail().equals(request.getEmail()) && usuarioRepository.existsByEmail(request.getEmail())) {
+            throw new UsuarioYaExisteException("El email ya existe: " + request.getEmail());
+        }
+
         usuario.setNombre(request.getNombre());
+        usuario.setEmail(request.getEmail());
         usuario.setContrasena(passwordEncoder.encode(request.getContrasena()));
         usuario.setRol(request.getRol());
 
@@ -119,6 +146,10 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new BadCredentialsException("Credenciales inválidas");
         }
 
+        if (Boolean.FALSE.equals(usuario.getEsActivo())) {
+            throw new BadCredentialsException("Usuario desactivado");
+        }
+
         String token = jwtUtil.generarToken(usuario.getNombre(), usuario.getRol().name());
         return LoginResponse.builder()
                 .token(token)
@@ -136,6 +167,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         return UsuarioResponse.builder()
                 .id(usuario.getId())
                 .nombre(usuario.getNombre())
+                .email(usuario.getEmail())
+                .esActivo(usuario.getEsActivo())
                 .rol(usuario.getRol())
                 .build();
     }

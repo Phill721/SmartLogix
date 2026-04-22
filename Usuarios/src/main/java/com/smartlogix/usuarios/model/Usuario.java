@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +27,9 @@ public class Usuario {
 
     private String nombre;
 
+    @Column(unique = true, nullable = false)
+    private String email;
+
     private String contrasena;
 
     @Enumerated(EnumType.STRING)
@@ -33,4 +37,7 @@ public class Usuario {
 
     @Builder.Default
     private Boolean adminBase = false;
+
+    @Builder.Default
+    private Boolean esActivo = true;
 }
