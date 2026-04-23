@@ -26,7 +26,7 @@ public class AdminSeedConfig {
             @Value("${app.seed.admin.contrasena:Admin123*}") String adminContrasena
     ) {
         return args -> {
-            if (!usuarioRepository.findByRol(Rol.ADMINISTRADOR).isEmpty()) {
+            if (usuarioRepository.existsByRol(Rol.ADMINISTRADOR)) {
                 return;
             }
 

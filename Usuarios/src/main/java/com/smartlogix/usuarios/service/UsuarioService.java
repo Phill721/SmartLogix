@@ -5,7 +5,7 @@ import com.smartlogix.usuarios.dto.LoginResponse;
 import com.smartlogix.usuarios.dto.UsuarioRequest;
 import com.smartlogix.usuarios.dto.UsuarioResponse;
 import com.smartlogix.usuarios.model.Rol;
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface UsuarioService {
 
@@ -17,11 +17,12 @@ public interface UsuarioService {
 
     UsuarioResponse actualizarUsuario(Long id, UsuarioRequest request);
 
-    List<UsuarioResponse> listarUsuarios();
+    Page<UsuarioResponse> listarUsuarios(String nombre, String email, Rol rol, Boolean esActivo,
+                                         int page, int size, String sortBy, String sortDir);
 
     UsuarioResponse listarUsuario(Long id);
 
-    List<UsuarioResponse> listarUsuarioPorRol(Rol rol);
+    Page<UsuarioResponse> listarUsuarioPorRol(Rol rol, int page, int size, String sortBy, String sortDir);
 
     LoginResponse login(LoginRequest request);
 }
