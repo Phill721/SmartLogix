@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package com.smartlogix.inventario.grpc;
+
+option java_package = "com.smartlogix.inventario.grpc";
+option java_outer_classname = "InventarioProto";
+option java_multiple_files = true;
+
+service ServicioInventario {
+  rpc CheckStock(StockRequest) returns (StockResponse);
+  rpc ReserveStock(ReserveRequest) returns (ReserveResponse);
+  rpc ReleaseStock(ReleaseRequest) returns (ReleaseResponse);
+  rpc UpdateStock(UpdateRequest) returns (UpdateResponse);
+}
+
+message StockRequest {
+  string sku = 1;
+}
+
+message StockResponse {
+  string sku = 1;
+  int32 stock_disponible = 2;
+  bool esta_disponible = 3;
+}
+
+message ReserveRequest {
+  string sku = 1;
+  int32 cantidad = 2;
+  string pedido_id = 3;
+}
+
+message ReserveResponse {
+  bool exito = 1;
+  string mensaje = 2;
+}
+
+message ReleaseRequest {
+  string sku = 1;
+  int32 cantidad = 2;
+  string pedido_id = 3;
+}
+
+message ReleaseResponse {
+  bool exito = 1;
+  string mensaje = 2;
+}
+
+message UpdateRequest {
+  string sku = 1;
+  int32 nueva_cantidad = 2;
+  string motivo = 3;
+}
+
+message UpdateResponse {
+  bool exito = 1;
+  int32 stock_actual = 2;
+}

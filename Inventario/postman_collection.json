@@ -1,0 +1,363 @@
+{
+  "info": {
+    "name": "SmartLogix - Microservicio de Inventario",
+    "description": "Colección completa de pruebas para el microservicio de Inventario de SmartLogix",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8083",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sku",
+      "value": "SKU-001",
+      "type": "string"
+    },
+    {
+      "key": "warehouseId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "POST /api/usuarios/login - Obtener token JWT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"admin\",\n  \"contrasena\": \"Admin123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "usuarios", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tiene token\", () => pm.expect(pm.response.json().token).to.not.be.null);",
+                  "pm.collectionVariables.set(\"token\", pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+      "item": [
+        {
+          "name": "POST /api/inventario - Registrar stock inicial",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"{{sku}}\",\n  \"categoria\": \"Electrónicos\",\n  \"warehouseId\": {{warehouseId}},\n  \"stockDisponible\": 100,\n  \"umbralMinimo\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Tiene ID\", () => pm.expect(pm.response.json().id).to.not.be.null);",
+                  "pm.test(\"SKU correcto\", () => pm.expect(pm.response.json().sku).to.eql(\"{{sku}}\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/inventario/{sku} - Consultar stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/{{sku}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "{{sku}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es número\", () => pm.expect(pm.response.json()).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/inventario/bodega/{warehouseId} - Consultar por bodega",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/bodega/{{warehouseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "bodega", "{{warehouseId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/inventario/{id}/ajuste - Ajuste manual",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": -5,\n  \"razon\": \"Producto dañado en bodega\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/1/ajuste",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "1", "ajuste"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Tiene stockDisponible\", () => pm.expect(pm.response.json().stockDisponible).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/inventario/{id}/movimientos - Historial movimientos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/1/movimientos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "1", "movimientos"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Inventario - Casos límite",
+      "item": [
+        {
+          "name": "POST sku duplicado → 409 Conflict",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"{{sku}}\",\n  \"categoria\": \"Electrónicos\",\n  \"warehouseId\": {{warehouseId}},\n  \"stockDisponible\": 50,\n  \"umbralMinimo\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET sku inexistente → 404 Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/SKU-INEXISTENTE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "SKU-INEXISTENTE"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH ajuste negativo → 400 Bad Request",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": -200,\n  \"razon\": \"Ajuste inválido\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/1/ajuste",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "1", "ajuste"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH cantidad 0 → 400 Bad Request",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 0,\n  \"razon\": \"Cantidad cero\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/1/ajuste",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "1", "ajuste"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Inventario - Alertas",
+      "item": [
+        {
+          "name": "PATCH ajuste bajo umbral → verificar logs Kafka",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": -95,\n  \"razon\": \"Bajar stock bajo umbral\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/1/ajuste",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventario", "1", "ajuste"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Stock bajo umbral\", () => pm.expect(pm.response.json().stockDisponible).to.be.below(10));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
