@@ -1,4 +1,4 @@
-package com.Microservicio.Productos.controller;
+package com.smartlogix.Productos.controller;
 
 import java.util.List;
 
@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.Microservicio.Productos.models.Producto;
-import com.Microservicio.Productos.service.ProductoService;
+import com.smartlogix.Productos.models.Producto;
+import com.smartlogix.Productos.service.ProductoService;
 
 @RestController
 @RequestMapping("/api/productos")

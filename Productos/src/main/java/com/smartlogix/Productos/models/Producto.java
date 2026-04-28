@@ -1,4 +1,4 @@
-package com.Microservicio.Productos.models;
+package com.smartlogix.Productos.models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

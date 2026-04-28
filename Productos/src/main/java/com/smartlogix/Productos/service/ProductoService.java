@@ -1,12 +1,12 @@
-package com.Microservicio.Productos.service;
+package com.smartlogix.Productos.service;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.Microservicio.Productos.models.Producto;
-import com.Microservicio.Productos.repository.ProductoRepository;
+import com.smartlogix.Productos.models.Producto;
+import com.smartlogix.Productos.repository.ProductoRepository;
 
 @Service
 public class ProductoService {
