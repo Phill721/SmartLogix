@@ -22,10 +22,11 @@ public class AdminSeedConfig {
     @Bean
     CommandLineRunner seedAdminUsuario(
             @Value("${app.seed.admin.nombre:admin}") String adminNombre,
+            @Value("${app.seed.admin.email:admin@smartlogix.local}") String adminEmail,
             @Value("${app.seed.admin.contrasena:Admin123*}") String adminContrasena
     ) {
         return args -> {
-            if (!usuarioRepository.findByRol(Rol.ADMINISTRADOR).isEmpty()) {
+            if (usuarioRepository.existsByRol(Rol.ADMINISTRADOR)) {
                 return;
             }
 
@@ -34,11 +35,18 @@ public class AdminSeedConfig {
                 return;
             }
 
+            if (usuarioRepository.existsByEmail(adminEmail)) {
+                log.warn("No se creó el admin por defecto porque el email '{}' ya existe.", adminEmail);
+                return;
+            }
+
             Usuario admin = Usuario.builder()
                     .nombre(adminNombre)
+                    .email(adminEmail)
                     .contrasena(passwordEncoder.encode(adminContrasena))
                     .rol(Rol.ADMINISTRADOR)
                     .adminBase(true)
+                    .esActivo(true)
                     .build();
 
             usuarioRepository.save(admin);

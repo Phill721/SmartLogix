@@ -38,7 +38,7 @@ public class ProductoController {
     }
 
     // Buscar por SKU
-    @GetMapping("/{sku}")
+    @GetMapping("/sku/{sku}")
     public ResponseEntity<Producto> obtenerPorSku(@PathVariable String sku) {
         return service.obtenerPorSku(sku)
                 .map(ResponseEntity::ok)

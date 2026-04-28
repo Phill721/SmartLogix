@@ -13,18 +13,30 @@ import com.smartlogix.usuarios.repository.UsuarioRepository;
 import com.smartlogix.usuarios.security.JwtUtil;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class UsuarioServiceImpl implements UsuarioService {
+
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("id", "nombre", "email", "rol", "esActivo");
 
     private final UsuarioRepository usuarioRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -41,10 +53,16 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
         }
 
+        if (usuarioRepository.existsByEmail(request.getEmail())) {
+            throw new UsuarioYaExisteException("El email ya existe: " + request.getEmail());
+        }
+
         Usuario usuario = Usuario.builder()
                 .nombre(request.getNombre())
+                .email(request.getEmail())
                 .contrasena(passwordEncoder.encode(request.getContrasena()))
                 .rol(request.getRol())
+                .esActivo(true)
                 .build();
 
         Usuario guardado = usuarioRepository.save(usuario);
@@ -63,6 +81,22 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    public void desactivarUsuario(Long id) {
+        Usuario usuario = obtenerUsuarioPorId(id);
+        if (Boolean.TRUE.equals(usuario.getAdminBase())) {
+            throw new AccessDeniedException("No se puede desactivar el administrador base del sistema");
+        }
+
+        if (Boolean.FALSE.equals(usuario.getEsActivo())) {
+            return;
+        }
+
+        usuario.setEsActivo(false);
+        usuarioRepository.save(usuario);
+        publicarEvento("DESACTIVAR", "Usuario desactivado con ID: " + id);
+    }
+
+    @Override
     public UsuarioResponse actualizarUsuario(Long id, UsuarioRequest request) {
         Usuario usuario = obtenerUsuarioPorId(id);
 
@@ -74,7 +108,12 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
         }
 
+        if (!usuario.getEmail().equals(request.getEmail()) && usuarioRepository.existsByEmail(request.getEmail())) {
+            throw new UsuarioYaExisteException("El email ya existe: " + request.getEmail());
+        }
+
         usuario.setNombre(request.getNombre());
+        usuario.setEmail(request.getEmail());
         usuario.setContrasena(passwordEncoder.encode(request.getContrasena()));
         usuario.setRol(request.getRol());
 
@@ -84,16 +123,40 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public List<UsuarioResponse> listarUsuarios() {
-        List<UsuarioResponse> usuarios = usuarioRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
-        publicarEvento("CONSULTAR", "Listado completo de usuarios");
-        return usuarios;
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponse> listarUsuarios(String nombre, String email, Rol rol, Boolean esActivo,
+                                                int page, int size, String sortBy, String sortDir) {
+        Pageable pageable = construirPageable(page, size, sortBy, sortDir);
+        Specification<Usuario> specification = (root, query, cb) -> cb.conjunction();
+
+        if (nombre != null && !nombre.isBlank()) {
+            String nombreFiltro = nombre.trim().toLowerCase();
+            specification = specification.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("nombre")), "%" + nombreFiltro + "%"));
+        }
+
+        if (email != null && !email.isBlank()) {
+            String emailFiltro = email.trim().toLowerCase();
+            specification = specification.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("email")), "%" + emailFiltro + "%"));
+        }
+
+        if (rol != null) {
+            specification = specification.and((root, query, cb) -> cb.equal(root.get("rol"), rol));
+        }
+
+        if (esActivo != null) {
+            specification = specification.and((root, query, cb) -> cb.equal(root.get("esActivo"), esActivo));
+        }
+
+        Page<UsuarioResponse> resultado = usuarioRepository.findAll(specification, pageable).map(this::toResponse);
+        publicarEvento("CONSULTAR", "Listado paginado de usuarios: page=" + resultado.getNumber()
+                + ", size=" + resultado.getSize() + ", total=" + resultado.getTotalElements());
+        return resultado;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UsuarioResponse listarUsuario(Long id) {
         Usuario usuario = obtenerUsuarioPorId(id);
         publicarEvento("CONSULTAR", "Consulta de usuario con ID: " + id);
@@ -101,22 +164,23 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public List<UsuarioResponse> listarUsuarioPorRol(Rol rol) {
-        List<UsuarioResponse> usuarios = usuarioRepository.findByRol(rol)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-        publicarEvento("CONSULTAR", "Consulta de usuarios por rol: " + rol);
-        return usuarios;
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponse> listarUsuarioPorRol(Rol rol, int page, int size, String sortBy, String sortDir) {
+        return listarUsuarios(null, null, rol, null, page, size, sortBy, sortDir);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository.findByNombre(request.getNombre())
                 .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
 
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasena())) {
             throw new BadCredentialsException("Credenciales inválidas");
+        }
+
+        if (Boolean.FALSE.equals(usuario.getEsActivo())) {
+            throw new BadCredentialsException("Usuario desactivado");
         }
 
         String token = jwtUtil.generarToken(usuario.getNombre(), usuario.getRol().name());
@@ -136,6 +200,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         return UsuarioResponse.builder()
                 .id(usuario.getId())
                 .nombre(usuario.getNombre())
+                .email(usuario.getEmail())
+                .esActivo(usuario.getEsActivo())
                 .rol(usuario.getRol())
                 .build();
     }
@@ -156,5 +222,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         return authentication.getAuthorities().stream()
                 .anyMatch(authority -> "ROLE_ADMINISTRADOR".equals(authority.getAuthority()));
+    }
+
+    private Pageable construirPageable(int page, int size, String sortBy, String sortDir) {
+        int pagina = Math.max(page, DEFAULT_PAGE);
+        int tamanio = size <= 0 ? DEFAULT_SIZE : Math.min(size, MAX_PAGE_SIZE);
+        String orden = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "id";
+        Sort.Direction direccion = "desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        return PageRequest.of(pagina, tamanio, Sort.by(direccion, orden));
     }
 }

@@ -13,5 +13,7 @@ import lombok.NoArgsConstructor;
 public class UsuarioResponse {
     private Long id;
     private String nombre;
+    private String email;
+    private Boolean esActivo;
     private Rol rol;
 }
