@@ -41,7 +41,7 @@ public class UsuarioController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRACION')")
     public ResponseEntity<PageResponse<UsuarioResponse>> listarUsuarios(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String email,
@@ -59,13 +59,13 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRACION')")
     public ResponseEntity<UsuarioResponse> listarUsuario(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.listarUsuario(id));
     }
 
     @GetMapping("/rol/{rol}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRACION')")
     public ResponseEntity<PageResponse<UsuarioResponse>> listarUsuarioPorRol(
             @PathVariable Rol rol,
             @RequestParam(defaultValue = "0") int page,
@@ -78,20 +78,20 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRACION')")
     public ResponseEntity<UsuarioResponse> actualizarUsuario(@PathVariable Long id, @RequestBody UsuarioRequest request) {
         return ResponseEntity.ok(usuarioService.actualizarUsuario(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRACION')")
     public ResponseEntity<Void> eliminarUsuario(@PathVariable Long id) {
         usuarioService.eliminarUsuario(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/desactivar")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAuthority('ADMINISTRACION')")
     public ResponseEntity<Void> desactivarUsuario(@PathVariable Long id) {
         usuarioService.desactivarUsuario(id);
         return ResponseEntity.noContent().build();

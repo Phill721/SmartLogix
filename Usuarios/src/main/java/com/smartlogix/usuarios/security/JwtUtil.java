@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -22,13 +23,19 @@ public class JwtUtil {
         this.expiration = expiration;
     }
 
-    public String generarToken(String nombre, String rol) {
+    public String generarToken(String nombre, String rol, String permiso) {
+        return generarToken(nombre, rol, permiso, permiso != null ? List.of(permiso) : List.of());
+    }
+
+    public String generarToken(String nombre, String rol, String permiso, List<String> permisos) {
         Date ahora = new Date();
         Date expiracion = new Date(ahora.getTime() + expiration);
 
         return Jwts.builder()
                 .setSubject(nombre)
                 .claim("rol", rol)
+                .claim("permiso", permiso)
+                .claim("permisos", permisos)
                 .setIssuedAt(ahora)
                 .setExpiration(expiracion)
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -71,5 +78,20 @@ public class JwtUtil {
     public String extraerRol(String token) {
         Object rol = extraerClaims(token).get("rol");
         return rol != null ? rol.toString() : null;
+    }
+
+    public String extraerPermiso(String token) {
+        Object permiso = extraerClaims(token).get("permiso");
+        return permiso != null ? permiso.toString() : null;
+    }
+
+    public List<String> extraerPermisos(String token) {
+        Object permisos = extraerClaims(token).get("permisos");
+        if (permisos instanceof List<?> lista) {
+            return lista.stream().map(Object::toString).toList();
+        }
+
+        String permiso = extraerPermiso(token);
+        return permiso != null ? List.of(permiso) : List.of();
     }
 }

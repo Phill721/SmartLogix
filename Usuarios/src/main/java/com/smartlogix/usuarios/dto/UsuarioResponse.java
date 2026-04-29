@@ -1,6 +1,7 @@
 package com.smartlogix.usuarios.dto;
 
 import com.smartlogix.usuarios.model.Rol;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +17,6 @@ public class UsuarioResponse {
     private String email;
     private Boolean esActivo;
     private Rol rol;
+    private String permiso;
+    private List<String> permisos;
 }

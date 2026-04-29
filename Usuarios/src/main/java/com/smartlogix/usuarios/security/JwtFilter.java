@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,10 +31,22 @@ public class JwtFilter extends OncePerRequestFilter {
             if (jwtUtil.validarToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 String nombre = jwtUtil.extraerNombre(token);
                 String rol = jwtUtil.extraerRol(token);
+                String permiso = jwtUtil.extraerPermiso(token);
+                List<String> permisos = new ArrayList<>(jwtUtil.extraerPermisos(token));
+                if (permiso != null && permisos.isEmpty()) {
+                    permisos.add(permiso);
+                }
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                if (rol != null) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + rol));
+                }
+                for (String permisoActual : permisos) {
+                    authorities.add(new SimpleGrantedAuthority(permisoActual));
+                }
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         nombre,
                         null,
-                        rol != null ? List.of(new SimpleGrantedAuthority("ROLE_" + rol)) : List.of()
+                        authorities
                 );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

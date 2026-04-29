@@ -104,6 +104,20 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new AccessDeniedException("El administrador base del sistema es inmutable y no puede modificarse");
         }
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authName = authentication != null ? authentication.getName() : null;
+        boolean isAdmin = esAdminAutenticado();
+
+        // Permitir actualización si es administrador o el propio usuario
+        if (!isAdmin && (authName == null || !usuario.getNombre().equals(authName))) {
+            throw new AccessDeniedException("Solo el propio usuario o un administrador puede modificar este usuario");
+        }
+
+        // Sólo un administrador puede cambiar el rol
+        if (!isAdmin && request.getRol() != null && request.getRol() != usuario.getRol()) {
+            throw new AccessDeniedException("Solo un administrador puede cambiar el rol de un usuario");
+        }
+
         if (!usuario.getNombre().equals(request.getNombre()) && usuarioRepository.existsByNombre(request.getNombre())) {
             throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
         }
@@ -115,7 +129,10 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setNombre(request.getNombre());
         usuario.setEmail(request.getEmail());
         usuario.setContrasena(passwordEncoder.encode(request.getContrasena()));
-        usuario.setRol(request.getRol());
+        // Solo setear rol si es administrador (ya validado más arriba)
+        if (isAdmin && request.getRol() != null) {
+            usuario.setRol(request.getRol());
+        }
 
         Usuario actualizado = usuarioRepository.save(usuario);
         publicarEvento("ACTUALIZAR", "Usuario actualizado con ID: " + actualizado.getId());
@@ -183,11 +200,18 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new BadCredentialsException("Usuario desactivado");
         }
 
-        String token = jwtUtil.generarToken(usuario.getNombre(), usuario.getRol().name());
+        String token = jwtUtil.generarToken(
+            usuario.getNombre(),
+            usuario.getRol().name(),
+            usuario.getRol().getPermiso(),
+            usuario.getRol().getPermisos()
+        );
         return LoginResponse.builder()
                 .token(token)
                 .nombre(usuario.getNombre())
                 .rol(usuario.getRol())
+                .permiso(usuario.getRol() != null ? usuario.getRol().getPermiso() : null)
+            .permisos(usuario.getRol() != null ? usuario.getRol().getPermisos() : List.of())
                 .build();
     }
 
@@ -203,6 +227,8 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .email(usuario.getEmail())
                 .esActivo(usuario.getEsActivo())
                 .rol(usuario.getRol())
+                .permiso(usuario.getRol() != null ? usuario.getRol().getPermiso() : null)
+                .permisos(usuario.getRol() != null ? usuario.getRol().getPermisos() : List.of())
                 .build();
     }
 
