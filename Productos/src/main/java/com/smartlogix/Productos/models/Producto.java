@@ -1,5 +1,7 @@
 package com.smartlogix.Productos.models;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,4 +30,7 @@ public class Producto {
     private String descripcion;
 
     private String categoria;
+
+    @ElementCollection
+    private List<String> imagenes;
 }

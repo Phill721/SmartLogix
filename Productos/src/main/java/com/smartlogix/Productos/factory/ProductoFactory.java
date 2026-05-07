@@ -11,6 +11,7 @@ public class ProductoFactory {
         producto.setNombre(dto.getNombre());
         producto.setDescripcion(dto.getDescripcion());
         producto.setCategoria(dto.getCategoria());
+        producto.setImagenes(dto.getImagenes());
         return producto;
     }
 }

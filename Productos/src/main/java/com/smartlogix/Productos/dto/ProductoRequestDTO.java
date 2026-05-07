@@ -1,5 +1,7 @@
 package com.smartlogix.Productos.dto;
 
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,4 +13,5 @@ public class ProductoRequestDTO {
     private String nombre;
     private String descripcion;
     private String categoria;
+    private List<String> imagenes;
 }

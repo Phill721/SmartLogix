@@ -10,7 +10,8 @@ public class ProductoMapper {
                 producto.getSku(),
                 producto.getNombre(),
                 producto.getDescripcion(),
-                producto.getCategoria()
+                producto.getCategoria(),
+                producto.getImagenes()
         );
     }
 }
