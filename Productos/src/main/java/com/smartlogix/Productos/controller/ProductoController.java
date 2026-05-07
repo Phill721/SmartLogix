@@ -37,8 +37,17 @@ public class ProductoController {
     }
 
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<ProductoResponseDTO> obtener(@PathVariable String sku) {
-        return ResponseEntity.ok(service.obtenerPorSku(sku));
+    public ResponseEntity<?> obtener(@PathVariable String sku) {
+
+        try {
+            ProductoResponseDTO producto = service.obtenerPorSku(sku);
+            return ResponseEntity.ok(producto);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(404)
+                    .body("Producto con SKU " + sku + " no existe");
+        }
     }
 
     @GetMapping("/categoria/{categoria}")
