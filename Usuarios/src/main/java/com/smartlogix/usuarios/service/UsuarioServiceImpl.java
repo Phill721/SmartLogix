@@ -50,11 +50,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         if (usuarioRepository.existsByNombre(request.getNombre())) {
-            throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
+            throw new UsuarioYaExisteException("El nombre de usuario ya está en uso");
         }
 
         if (usuarioRepository.existsByEmail(request.getEmail())) {
-            throw new UsuarioYaExisteException("El email ya existe: " + request.getEmail());
+            throw new UsuarioYaExisteException("El correo electrónico ya está registrado");
         }
 
         Usuario usuario = Usuario.builder()
@@ -119,11 +119,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         if (!usuario.getNombre().equals(request.getNombre()) && usuarioRepository.existsByNombre(request.getNombre())) {
-            throw new UsuarioYaExisteException("El nombre de usuario ya existe: " + request.getNombre());
+            throw new UsuarioYaExisteException("El nombre de usuario ya está en uso");
         }
 
         if (!usuario.getEmail().equals(request.getEmail()) && usuarioRepository.existsByEmail(request.getEmail())) {
-            throw new UsuarioYaExisteException("El email ya existe: " + request.getEmail());
+            throw new UsuarioYaExisteException("El correo electrónico ya está registrado");
         }
 
         usuario.setNombre(request.getNombre());
