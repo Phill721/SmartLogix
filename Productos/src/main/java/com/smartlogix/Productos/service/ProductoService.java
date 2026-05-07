@@ -23,7 +23,7 @@ public class ProductoService {
         this.repository = repository;
     }
 
-    @CacheEvict(value = {"productos", "producto"}, allEntries = true)
+    @CacheEvict(value = { "productos", "producto" }, allEntries = true)
     public ProductoResponseDTO crearProducto(ProductoRequestDTO dto) {
         Producto producto = ProductoFactory.crearProducto(dto);
         return ProductoMapper.toDTO(repository.save(producto));
@@ -46,13 +46,21 @@ public class ProductoService {
 
     @Cacheable(value = "producto", key = "#categoria")
     public List<ProductoResponseDTO> porCategoria(String categoria) {
-        return repository.findByCategoria(categoria)
+        return repository.findByCategoriaIgnoreCase(categoria)
                 .stream()
                 .map(ProductoMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    @CacheEvict(value = {"productos", "producto"}, allEntries = true)
+    @Cacheable(value = "busquedaNombre", key = "#nombre")
+    public List<ProductoResponseDTO> buscarPorNombre(String nombre) {
+        return repository.findByNombreContainingIgnoreCase(nombre)
+                .stream()
+                .map(ProductoMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @CacheEvict(value = { "productos", "producto" }, allEntries = true)
     public ProductoResponseDTO actualizar(String sku, ProductoRequestDTO dto) {
         Producto producto = repository.findBySku(sku)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
@@ -65,7 +73,7 @@ public class ProductoService {
         return ProductoMapper.toDTO(repository.save(producto));
     }
 
-    @CacheEvict(value = {"productos", "producto"}, allEntries = true)
+    @CacheEvict(value = { "productos", "producto" }, allEntries = true)
     public void eliminar(Long id) {
         repository.deleteById(id);
     }
