@@ -11,6 +11,7 @@ public class ProductoMapper {
                 producto.getNombre(),
                 producto.getDescripcion(),
                 producto.getCategoria(),
+                producto.getPrecio(),
                 producto.getImagenes()
         );
     }

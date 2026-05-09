@@ -70,6 +70,7 @@ public class ProductoService {
         producto.setSku(dto.getSku());
         producto.setNombre(dto.getNombre());
         producto.setDescripcion(dto.getDescripcion());
+        producto.setPrecio(dto.getPrecio());
         producto.setCategoria(dto.getCategoria());
         producto.setImagenes(dto.getImagenes());
 

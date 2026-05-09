@@ -1,6 +1,7 @@
 package com.smartlogix.Productos.models;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -36,6 +37,8 @@ public class Producto implements Serializable {
     private String nombre;
 
     private String descripcion;
+
+    private BigDecimal precio;
 
     private String categoria;
 
