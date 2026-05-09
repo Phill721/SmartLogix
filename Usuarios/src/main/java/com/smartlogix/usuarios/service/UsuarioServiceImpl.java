@@ -45,6 +45,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final ApplicationEventPublisher eventPublisher;
     private final JwtUtil jwtUtil;
     private final AuditService auditService;
+    private final LoginAttemptService loginAttemptService;
 
     @Override
     public UsuarioResponse agregarUsuario(UsuarioRequest request) {
@@ -259,12 +260,27 @@ public class UsuarioServiceImpl implements UsuarioService {
                     return new BadCredentialsException("Credenciales inválidas");
                 });
 
+        // Verificar si la cuenta está bloqueada temporalmente
+        loginAttemptService.desbloquearAutomaticamente(usuario);
+        if (loginAttemptService.estaBloqueadoTemporalmente(usuario)) {
+            auditService.registrarIntentoFallido(
+                request.getNombre(),
+                TipoEvento.LOGIN_FALLIDO,
+                EstadoIntento.BLOQUEADO,
+                "Intento de login con cuenta bloqueada temporalmente por intentos fallidos",
+                usuario.getId(),
+                usuario.getEmail()
+            );
+            throw new BadCredentialsException("Cuenta bloqueada temporalmente. Intente más tarde.");
+        }
+
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasena())) {
+            loginAttemptService.registrarIntentoFallido(usuario, "Contraseña incorrecta");
             auditService.registrarIntentoFallido(
                 request.getNombre(),
                 TipoEvento.LOGIN_FALLIDO,
                 EstadoIntento.FALLIDO,
-                "Intento de login con contraseña incorrecta",
+                "Intento de login con contraseña incorrecta (Intentos: " + (usuario.getIntentosFallidos() + 1) + "/3)",
                 usuario.getId(),
                 usuario.getEmail()
             );
@@ -282,6 +298,9 @@ public class UsuarioServiceImpl implements UsuarioService {
             );
             throw new BadCredentialsException("Usuario desactivado");
         }
+
+        // Login exitoso - limpiar intentos fallidos
+        loginAttemptService.registrarIntentoExitoso(usuario);
 
         String token = jwtUtil.generarToken(
             usuario.getNombre(),
@@ -301,6 +320,14 @@ public class UsuarioServiceImpl implements UsuarioService {
     private Usuario obtenerUsuarioPorId(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
+    }
+
+    @Override
+    @Transactional
+    public void desbloquearCuenta(Long id) {
+        Usuario usuario = obtenerUsuarioPorId(id);
+        loginAttemptService.desbloquearCuenta(usuario);
+        publicarEvento("DESBLOQUEAR", "Cuenta desbloqueada para usuario con ID: " + id);
     }
 
     private UsuarioResponse toResponse(Usuario usuario) {

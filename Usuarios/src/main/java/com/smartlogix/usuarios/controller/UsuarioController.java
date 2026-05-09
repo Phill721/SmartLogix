@@ -6,6 +6,7 @@ import com.smartlogix.usuarios.dto.PageResponse;
 import com.smartlogix.usuarios.dto.UsuarioRequest;
 import com.smartlogix.usuarios.dto.UsuarioResponse;
 import com.smartlogix.usuarios.model.Rol;
+import com.smartlogix.usuarios.service.LoginAttemptService;
 import com.smartlogix.usuarios.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final LoginAttemptService loginAttemptService;
 
     @PostMapping("/register")
     public ResponseEntity<UsuarioResponse> agregarUsuario(@Valid @RequestBody UsuarioRequest request) {
@@ -95,5 +97,12 @@ public class UsuarioController {
     public ResponseEntity<Void> desactivarUsuario(@PathVariable Long id) {
         usuarioService.desactivarUsuario(id);
         return ResponseEntity.noContent().build();
+
+    @PatchMapping("/{id}/desbloquear")
+    @PreAuthorize("hasAuthority('ADMINISTRACION')")
+    public ResponseEntity<Void> desbloquearCuenta(@PathVariable Long id) {
+        usuarioService.desbloquearCuenta(id);
+        return ResponseEntity.noContent().build();
+    }
     }
 }

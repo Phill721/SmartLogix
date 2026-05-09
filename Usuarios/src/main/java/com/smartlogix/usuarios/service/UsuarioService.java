@@ -25,4 +25,6 @@ public interface UsuarioService {
     Page<UsuarioResponse> listarUsuarioPorRol(Rol rol, int page, int size, String sortBy, String sortDir);
 
     LoginResponse login(LoginRequest request);
+
+    void desbloquearCuenta(Long id);
 }

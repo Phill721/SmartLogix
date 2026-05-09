@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.Column;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -50,4 +51,16 @@ public class Usuario {
 
     @Builder.Default
     private Boolean esActivo = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private EstadoBloqueo estadoBloqueo = EstadoBloqueo.ACTIVO;
+
+    @Column
+    private LocalDateTime fechaBloqueoTemporal;
+
+    @Column
+    @Builder.Default
+    private Integer intentosFallidos = 0;
 }
