@@ -14,4 +14,5 @@ public class UsuarioEvent {
     private String tipoOperacion;
     private String mensaje;
     private LocalDateTime timestamp;
+    private String usuarioAutenticado;
 }

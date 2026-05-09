@@ -233,11 +233,22 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     private void publicarEvento(String tipoOperacion, String mensaje) {
+        String usuarioAutenticado = obtenerUsuarioAutenticado();
         eventPublisher.publishEvent(UsuarioEvent.builder()
                 .tipoOperacion(tipoOperacion)
                 .mensaje(mensaje)
                 .timestamp(LocalDateTime.now())
+                .usuarioAutenticado(usuarioAutenticado)
                 .build());
+    }
+
+    private String obtenerUsuarioAutenticado() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            String nombre = authentication.getName();
+            return (nombre != null && !nombre.isBlank()) ? nombre : "ANONIMO";
+        }
+        return "ANONIMO";
     }
 
     private boolean esAdminAutenticado() {
