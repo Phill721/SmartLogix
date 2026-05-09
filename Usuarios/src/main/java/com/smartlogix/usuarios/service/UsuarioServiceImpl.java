@@ -97,6 +97,15 @@ public class UsuarioServiceImpl implements UsuarioService {
     public void desactivarUsuario(Long id) {
         Usuario usuario = obtenerUsuarioPorId(id);
         if (Boolean.TRUE.equals(usuario.getAdminBase())) {
+            String usuarioAutenticado = obtenerUsuarioAutenticado();
+            auditService.registrarIntentoFallido(
+                usuarioAutenticado,
+                TipoEvento.INTENTO_MODIFICAR_ADMIN_BASE,
+                EstadoIntento.BLOQUEADO,
+                "Intento de desactivar el administrador base del sistema",
+                id,
+                usuario.getEmail()
+            );
             throw new AccessDeniedException("No se puede desactivar el administrador base del sistema");
         }
 
@@ -183,6 +192,26 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         if (!usuario.getEmail().equals(request.getEmail()) && usuarioRepository.existsByEmail(request.getEmail())) {
             throw new UsuarioYaExisteException("El correo electrónico ya está registrado");
+        }
+
+        boolean esPropioUsuario = authName != null && usuario.getNombre().equals(authName);
+        boolean cambiaContrasena = request.getContrasena() != null && !request.getContrasena().isBlank();
+        if (esPropioUsuario && cambiaContrasena) {
+            if (request.getContrasenaActual() == null || request.getContrasenaActual().isBlank()) {
+                throw new AccessDeniedException("Debe confirmar la contraseña actual para cambiarla");
+            }
+
+            if (!passwordEncoder.matches(request.getContrasenaActual(), usuario.getContrasena())) {
+                auditService.registrarIntentoFallido(
+                    obtenerUsuarioAutenticado(),
+                    TipoEvento.INTENTO_ACCESO_NO_AUTORIZADO,
+                    EstadoIntento.FALLIDO,
+                    "Intento de cambio de contraseña con contraseña actual incorrecta",
+                    id,
+                    usuario.getEmail()
+                );
+                throw new AccessDeniedException("La contraseña actual no coincide");
+            }
         }
 
         usuario.setNombre(request.getNombre());

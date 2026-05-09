@@ -97,6 +97,7 @@ public class UsuarioController {
     public ResponseEntity<Void> desactivarUsuario(@PathVariable Long id) {
         usuarioService.desactivarUsuario(id);
         return ResponseEntity.noContent().build();
+    }
 
     @PatchMapping("/{id}/desbloquear")
     @PreAuthorize("hasAuthority('ADMINISTRACION')")
@@ -105,4 +106,4 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
     }
-}
+

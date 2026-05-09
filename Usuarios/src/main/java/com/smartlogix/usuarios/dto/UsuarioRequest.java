@@ -26,5 +26,7 @@ public class UsuarioRequest {
     @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
     private String contrasena;
 
+    private String contrasenaActual;
+
     private Rol rol;
 }
