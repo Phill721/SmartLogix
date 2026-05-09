@@ -105,6 +105,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         usuario.setEsActivo(false);
+        usuario.setTokensInvalidosDesde(LocalDateTime.now());
         usuarioRepository.save(usuario);
         publicarEvento("DESACTIVAR", "Usuario desactivado con ID: " + id);
     }

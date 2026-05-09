@@ -63,4 +63,7 @@ public class Usuario {
     @Column
     @Builder.Default
     private Integer intentosFallidos = 0;
+
+    @Column
+    private LocalDateTime tokensInvalidosDesde;
 }

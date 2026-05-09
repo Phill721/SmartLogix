@@ -76,6 +76,10 @@ public class JwtUtil {
         return extraerClaims(token).getSubject();
     }
 
+    public Date extraerIssuedAt(String token) {
+        return extraerClaims(token).getIssuedAt();
+    }
+
     public String extraerRol(String token) {
         Object rol = extraerClaims(token).get("rol");
         if (rol != null) {
