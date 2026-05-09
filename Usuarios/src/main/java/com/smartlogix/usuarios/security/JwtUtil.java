@@ -34,6 +34,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(nombre)
                 .claim("rol", rol)
+                .claim("role", rol)
                 .claim("permiso", permiso)
                 .claim("permisos", permisos)
                 .setIssuedAt(ahora)
@@ -77,7 +78,11 @@ public class JwtUtil {
 
     public String extraerRol(String token) {
         Object rol = extraerClaims(token).get("rol");
-        return rol != null ? rol.toString() : null;
+        if (rol != null) {
+            return rol.toString();
+        }
+        Object role = extraerClaims(token).get("role");
+        return role != null ? role.toString() : null;
     }
 
     public String extraerPermiso(String token) {
