@@ -10,6 +10,9 @@ import java.util.Base64;
 import java.util.List;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
+import com.smartlogix.usuarios.service.AuditService;
+import com.smartlogix.usuarios.model.TipoEvento;
+import com.smartlogix.usuarios.model.EstadoIntento;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final AuditService auditService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,15 +38,24 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 String[] parts = token.split("\\.");
                 if (parts.length != 3) {
+                    String nombre = "ANONIMO";
+                    try { nombre = jwtUtil.extraerNombre(token); } catch (Exception ignored) {}
+                    auditService.registrarIntentoFallido(nombre, TipoEvento.INTENTO_ACCESO_NO_AUTORIZADO, EstadoIntento.FALLIDO, "Token inválido o malformado", null, null);
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
                     return;
                 }
                 String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
                 if (!headerJson.contains("\"alg\":\"HS256\"")) {
+                    String nombre = "ANONIMO";
+                    try { nombre = jwtUtil.extraerNombre(token); } catch (Exception ignored) {}
+                    auditService.registrarIntentoFallido(nombre, TipoEvento.INTENTO_ACCESO_NO_AUTORIZADO, EstadoIntento.FALLIDO, "Algoritmo de firma no permitido en token", null, null);
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Algoritmo de firma no permitido");
                     return;
                 }
             } catch (IllegalArgumentException e) {
+                String nombre = "ANONIMO";
+                try { nombre = jwtUtil.extraerNombre(token); } catch (Exception ignored) {}
+                auditService.registrarIntentoFallido(nombre, TipoEvento.INTENTO_ACCESO_NO_AUTORIZADO, EstadoIntento.FALLIDO, "Token inválido (decodificación)", null, null);
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
                 return;
             }
