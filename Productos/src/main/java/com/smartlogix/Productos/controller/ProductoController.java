@@ -1,7 +1,9 @@
 package com.smartlogix.Productos.controller;
 
-import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.smartlogix.Productos.dto.ProductoRequestDTO;
@@ -32,8 +35,13 @@ public class ProductoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductoResponseDTO>> listar() {
-        return ResponseEntity.ok(service.listarProductos());
+    public ResponseEntity<Page<ProductoResponseDTO>> listar(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(service.listarProductos(pageable));
     }
 
     @GetMapping("/sku/{sku}")
@@ -51,15 +59,27 @@ public class ProductoController {
     }
 
     @GetMapping("/categoria/{categoria}")
-    public ResponseEntity<List<ProductoResponseDTO>> porCategoria(@PathVariable String categoria) {
-        return ResponseEntity.ok(service.porCategoria(categoria));
+    public ResponseEntity<Page<ProductoResponseDTO>> porCategoria(
+            @PathVariable String categoria,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return ResponseEntity.ok(service.porCategoria(categoria, pageable));
     }
 
     @PutMapping("/{sku}")
-    public ResponseEntity<ProductoResponseDTO> actualizar(
+    public ResponseEntity<?> actualizar(
             @PathVariable String sku,
             @RequestBody ProductoRequestDTO dto) {
-        return ResponseEntity.ok(service.actualizar(sku, dto));
+
+        try {
+            return ResponseEntity.ok(service.actualizar(sku, dto));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")

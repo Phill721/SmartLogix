@@ -1,10 +1,9 @@
 package com.smartlogix.Productos.service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.smartlogix.Productos.dto.ProductoRequestDTO;
@@ -30,11 +29,10 @@ public class ProductoService {
     }
 
     @Cacheable(value = "productos")
-    public List<ProductoResponseDTO> listarProductos() {
-        return repository.findAll()
-                .stream()
-                .map(ProductoMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<ProductoResponseDTO> listarProductos(Pageable pageable) {
+
+        return repository.findAll(pageable)
+                .map(ProductoMapper::toDTO);
     }
 
     @Cacheable(value = "producto", key = "#sku")
@@ -44,20 +42,18 @@ public class ProductoService {
         return ProductoMapper.toDTO(producto);
     }
 
-    @Cacheable(value = "producto", key = "#categoria")
-    public List<ProductoResponseDTO> porCategoria(String categoria) {
-        return repository.findByCategoriaIgnoreCase(categoria)
-                .stream()
-                .map(ProductoMapper::toDTO)
-                .collect(Collectors.toList());
+    @Cacheable(value = "categoria", key = "#categoria + '-' + #pageable.pageNumber")
+    public Page<ProductoResponseDTO> porCategoria(String categoria, Pageable pageable) {
+
+        return repository.findByCategoriaIgnoreCase(categoria, pageable)
+                .map(ProductoMapper::toDTO);
     }
 
-    @Cacheable(value = "busquedaNombre", key = "#nombre")
-    public List<ProductoResponseDTO> buscarPorNombre(String nombre) {
-        return repository.findByNombreContainingIgnoreCase(nombre)
-                .stream()
-                .map(ProductoMapper::toDTO)
-                .collect(Collectors.toList());
+    @Cacheable(value = "busquedaNombre", key = "#nombre + '-' + #pageable.pageNumber")
+    public Page<ProductoResponseDTO> buscarPorNombre(String nombre, Pageable pageable) {
+
+        return repository.findByNombreContainingIgnoreCase(nombre, pageable)
+                .map(ProductoMapper::toDTO);
     }
 
     @CacheEvict(value = { "productos", "producto" }, allEntries = true)
@@ -65,6 +61,13 @@ public class ProductoService {
         Producto producto = repository.findBySku(sku)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
+        // Validar SKU duplicado
+        if (!producto.getSku().equals(dto.getSku())
+                && repository.existsBySku(dto.getSku())) {
+
+            throw new RuntimeException("Ya existe un producto con el SKU: " + dto.getSku());
+        }
+        producto.setSku(dto.getSku());
         producto.setNombre(dto.getNombre());
         producto.setDescripcion(dto.getDescripcion());
         producto.setCategoria(dto.getCategoria());
