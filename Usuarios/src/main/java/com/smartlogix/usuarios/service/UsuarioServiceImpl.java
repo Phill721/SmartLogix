@@ -275,6 +275,18 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new BadCredentialsException("Cuenta bloqueada temporalmente. Intente más tarde.");
         }
 
+        if (Boolean.FALSE.equals(usuario.getEsActivo())) {
+            auditService.registrarIntentoFallido(
+                request.getNombre(),
+                TipoEvento.LOGIN_FALLIDO,
+                EstadoIntento.BLOQUEADO,
+                "Intento de login con usuario desactivado",
+                usuario.getId(),
+                usuario.getEmail()
+            );
+            throw new BadCredentialsException("Usuario desactivado");
+        }
+
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasena())) {
             loginAttemptService.registrarIntentoFallido(usuario, "Contraseña incorrecta");
             auditService.registrarIntentoFallido(
@@ -286,18 +298,6 @@ public class UsuarioServiceImpl implements UsuarioService {
                 usuario.getEmail()
             );
             throw new BadCredentialsException("Credenciales inválidas");
-        }
-
-        if (Boolean.FALSE.equals(usuario.getEsActivo())) {
-            auditService.registrarIntentoFallido(
-                request.getNombre(),
-                TipoEvento.LOGIN_FALLIDO,
-                EstadoIntento.BLOQUEADO,
-                "Intento de login con usuario desactivado",
-                usuario.getId(),
-                usuario.getEmail()
-            );
-            throw new BadCredentialsException("Usuario desactivado");
         }
 
         // Login exitoso - limpiar intentos fallidos
