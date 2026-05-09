@@ -7,7 +7,9 @@ import com.smartlogix.usuarios.dto.UsuarioResponse;
 import com.smartlogix.usuarios.events.UsuarioEvent;
 import com.smartlogix.usuarios.exception.ResourceNotFoundException;
 import com.smartlogix.usuarios.exception.UsuarioYaExisteException;
+import com.smartlogix.usuarios.model.EstadoIntento;
 import com.smartlogix.usuarios.model.Rol;
+import com.smartlogix.usuarios.model.TipoEvento;
 import com.smartlogix.usuarios.model.Usuario;
 import com.smartlogix.usuarios.repository.UsuarioRepository;
 import com.smartlogix.usuarios.security.JwtUtil;
@@ -42,11 +44,21 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
     private final JwtUtil jwtUtil;
+    private final AuditService auditService;
 
     @Override
     public UsuarioResponse agregarUsuario(UsuarioRequest request) {
-        if (request.getRol() == Rol.ADMINISTRADOR && !esAdminAutenticado()) {
-            throw new AccessDeniedException("Solo un administrador puede crear usuarios con rol ADMINISTRADOR");
+        if (request.getRol() == Rol.ADMINISTRADOR && !esAdminBaseAutenticado()) {
+            String usuario = obtenerUsuarioAutenticado();
+            auditService.registrarIntentoFallido(
+                usuario,
+                TipoEvento.INTENTO_CAMBIAR_ROL_ADMIN,
+                EstadoIntento.BLOQUEADO,
+                "Intento de crear usuario con rol ADMINISTRADOR sin ser el admin base",
+                null,
+                request.getEmail()
+            );
+            throw new AccessDeniedException("Solo el administrador base puede crear usuarios con rol ADMINISTRADOR");
         }
 
         if (usuarioRepository.existsByNombre(request.getNombre())) {
@@ -101,6 +113,15 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = obtenerUsuarioPorId(id);
 
         if (Boolean.TRUE.equals(usuario.getAdminBase())) {
+            String usuarioAutenticado = obtenerUsuarioAutenticado();
+            auditService.registrarIntentoFallido(
+                usuarioAutenticado,
+                TipoEvento.INTENTO_MODIFICAR_ADMIN_BASE,
+                EstadoIntento.BLOQUEADO,
+                "Intento de modificar el administrador base del sistema",
+                id,
+                usuario.getEmail()
+            );
             throw new AccessDeniedException("El administrador base del sistema es inmutable y no puede modificarse");
         }
 
@@ -110,12 +131,48 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         // Permitir actualización si es administrador o el propio usuario
         if (!isAdmin && (authName == null || !usuario.getNombre().equals(authName))) {
+            String usuarioAutenticado = obtenerUsuarioAutenticado();
+            auditService.registrarIntentoFallido(
+                usuarioAutenticado,
+                TipoEvento.INTENTO_ACTUALIZAR_OTRO_USUARIO,
+                EstadoIntento.BLOQUEADO,
+                "Intento de actualizar usuario diferente sin permisos de admin",
+                id,
+                usuario.getEmail()
+            );
             throw new AccessDeniedException("Solo el propio usuario o un administrador puede modificar este usuario");
         }
 
-        // Sólo un administrador puede cambiar el rol
-        if (!isAdmin && request.getRol() != null && request.getRol() != usuario.getRol()) {
-            throw new AccessDeniedException("Solo un administrador puede cambiar el rol de un usuario");
+        // Sólo el admin base puede cambiar roles (no cualquier admin)
+        boolean esAdminBase = esAdminBaseAutenticado();
+        if (request.getRol() != null && request.getRol() != usuario.getRol()) {
+            // Si intenta cambiar rol sin ser admin base
+            if (!esAdminBase) {
+                String usuarioAutenticado = obtenerUsuarioAutenticado();
+                auditService.registrarIntentoFallido(
+                    usuarioAutenticado,
+                    TipoEvento.INTENTO_CAMBIAR_ROL_ADMIN,
+                    EstadoIntento.BLOQUEADO,
+                    "Intento de cambiar rol sin ser el administrador base",
+                    id,
+                    usuario.getEmail()
+                );
+                throw new AccessDeniedException("Solo el administrador base del sistema puede cambiar roles");
+            }
+            
+            // Si intenta degradar a un admin siendo admin (no base)
+            if (usuario.getRol() == Rol.ADMINISTRADOR && !esAdminBase) {
+                String usuarioAutenticado = obtenerUsuarioAutenticado();
+                auditService.registrarIntentoFallido(
+                    usuarioAutenticado,
+                    TipoEvento.INTENTO_CAMBIAR_ROL_ADMIN,
+                    EstadoIntento.BLOQUEADO,
+                    "Intento de degradar un administrador sin ser el admin base",
+                    id,
+                    usuario.getEmail()
+                );
+                throw new AccessDeniedException("Solo el administrador base puede cambiar roles de otros administradores");
+            }
         }
 
         if (!usuario.getNombre().equals(request.getNombre()) && usuarioRepository.existsByNombre(request.getNombre())) {
@@ -129,8 +186,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setNombre(request.getNombre());
         usuario.setEmail(request.getEmail());
         usuario.setContrasena(passwordEncoder.encode(request.getContrasena()));
-        // Solo setear rol si es administrador (ya validado más arriba)
-        if (isAdmin && request.getRol() != null) {
+        // Solo setear rol si es admin base (ya validado más arriba)
+        if (esAdminBase && request.getRol() != null) {
             usuario.setRol(request.getRol());
         }
 
@@ -190,13 +247,39 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository.findByNombre(request.getNombre())
-                .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
+                .orElseThrow(() -> {
+                    auditService.registrarIntentoFallido(
+                        request.getNombre(),
+                        TipoEvento.USUARIO_NO_ENCONTRADO,
+                        EstadoIntento.FALLIDO,
+                        "Intento de login con usuario inexistente",
+                        null,
+                        null
+                    );
+                    return new BadCredentialsException("Credenciales inválidas");
+                });
 
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasena())) {
+            auditService.registrarIntentoFallido(
+                request.getNombre(),
+                TipoEvento.LOGIN_FALLIDO,
+                EstadoIntento.FALLIDO,
+                "Intento de login con contraseña incorrecta",
+                usuario.getId(),
+                usuario.getEmail()
+            );
             throw new BadCredentialsException("Credenciales inválidas");
         }
 
         if (Boolean.FALSE.equals(usuario.getEsActivo())) {
+            auditService.registrarIntentoFallido(
+                request.getNombre(),
+                TipoEvento.LOGIN_FALLIDO,
+                EstadoIntento.BLOQUEADO,
+                "Intento de login con usuario desactivado",
+                usuario.getId(),
+                usuario.getEmail()
+            );
             throw new BadCredentialsException("Usuario desactivado");
         }
 
@@ -259,6 +342,18 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         return authentication.getAuthorities().stream()
                 .anyMatch(authority -> "ROLE_ADMINISTRADOR".equals(authority.getAuthority()));
+    }
+
+    private boolean esAdminBaseAutenticado() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        String nombreUsuario = authentication.getName();
+        return usuarioRepository.findByNombre(nombreUsuario)
+                .map(usuario -> Boolean.TRUE.equals(usuario.getAdminBase()))
+                .orElse(false);
     }
 
     private Pageable construirPageable(int page, int size, String sortBy, String sortDir) {
