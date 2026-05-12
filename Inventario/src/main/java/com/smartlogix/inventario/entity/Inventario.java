@@ -1,17 +1,17 @@
-package com.smartlogix.inventario.entity; // <--- REVISA ESTO
+package com.smartlogix.inventario.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inventarios")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Data
+@NoArgsConstructor 
+@AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Inventario {
@@ -40,4 +40,8 @@ public class Inventario {
 
     @LastModifiedDate
     private LocalDateTime fechaActualizacion;
+
+    public Integer getStockDisponible() {
+        return (stockDisponible != null) ? stockDisponible : 0;
+    }
 }
