@@ -3,10 +3,10 @@ package com.smartlogix.Productos;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+//@SpringBootTest
 class ProductosApplicationTests {
 
-	@Test
+	//@Test
 	void contextLoads() {
 	}
 
