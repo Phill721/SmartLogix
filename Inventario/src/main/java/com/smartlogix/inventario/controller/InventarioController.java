@@ -1,10 +1,15 @@
 package com.smartlogix.inventario.controller;
 
-import com.smartlogix.inventario.dto.*;
-import com.smartlogix.inventario.entity.*;
+import com.smartlogix.inventario.dto.AjusteRequest;
+import com.smartlogix.inventario.dto.InventarioRequest;
+import com.smartlogix.inventario.entity.Inventario;
+import com.smartlogix.inventario.entity.MovimientoInventario;
 import com.smartlogix.inventario.service.InventarioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,30 +19,33 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InventarioController {
 
-    private final InventarioService inventarioService;
+    private final InventarioService service;
 
     @PostMapping
-    public ResponseEntity<Inventario> crear(@RequestBody InventarioRequest request) {
-        return ResponseEntity.ok(inventarioService.crearInventario(request));
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
+    public ResponseEntity<Inventario> crear(@Valid @RequestBody InventarioRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.crearInventario(request));
     }
 
     @GetMapping("/{sku}")
     public ResponseEntity<Inventario> obtenerPorSku(@PathVariable String sku) {
-        return ResponseEntity.ok(inventarioService.obtenerPorSku(sku));
+        return ResponseEntity.ok(service.obtenerPorSku(sku));
     }
 
     @GetMapping("/bodega/{bodegaId}")
     public ResponseEntity<List<Inventario>> obtenerPorBodega(@PathVariable Long bodegaId) {
-        return ResponseEntity.ok(inventarioService.obtenerPorBodega(bodegaId));
+        return ResponseEntity.ok(service.obtenerPorBodega(bodegaId));
     }
 
-    @PatchMapping("/{id}/ajuste")
-    public ResponseEntity<Inventario> ajustar(@PathVariable Long id, @RequestBody AjusteRequest request) {
-        return ResponseEntity.ok(inventarioService.ajusteManual(id, request));
+    @PostMapping("/{id}/ajuste")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Inventario> ajusteManual(@PathVariable Long id,
+            @Valid @RequestBody AjusteRequest request) {
+        return ResponseEntity.ok(service.ajusteManual(id, request));
     }
 
     @GetMapping("/{id}/movimientos")
     public ResponseEntity<List<MovimientoInventario>> obtenerMovimientos(@PathVariable Long id) {
-        return ResponseEntity.ok(inventarioService.obtenerMovimientos(id));
+        return ResponseEntity.ok(service.obtenerMovimientos(id));
     }
 }

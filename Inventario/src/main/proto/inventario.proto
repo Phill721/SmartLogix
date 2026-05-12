@@ -1,16 +1,14 @@
 syntax = "proto3";
 
-package com.smartlogix.inventario.grpc;
-
-option java_package = "com.smartlogix.inventario.grpc";
-option java_outer_classname = "InventarioProto";
 option java_multiple_files = true;
+option java_package = "com.smartlogix.inventario.grpc";
 
 service ServicioInventario {
-  rpc CheckStock(StockRequest) returns (StockResponse);
-  rpc ReserveStock(ReserveRequest) returns (ReserveResponse);
-  rpc ReleaseStock(ReleaseRequest) returns (ReleaseResponse);
-  rpc UpdateStock(UpdateRequest) returns (UpdateResponse);
+  // HU-INV-02: Consulta de stock
+  rpc CheckStock (StockRequest) returns (StockResponse);
+  
+  // HU-INV-05: Reserva de stock (Síncrona)
+  rpc ReserveStock (ReserveRequest) returns (ReserveResponse);
 }
 
 message StockRequest {
@@ -19,39 +17,18 @@ message StockRequest {
 
 message StockResponse {
   string sku = 1;
-  int32 stock_disponible = 2;
-  bool esta_disponible = 3;
+  int32 stock_total = 2;
+  int32 stock_reservado = 3;
+  int32 stock_disponible = 4;
+  bool esta_disponible = 5;
 }
 
 message ReserveRequest {
   string sku = 1;
   int32 cantidad = 2;
-  string pedido_id = 3;
 }
 
 message ReserveResponse {
   bool exito = 1;
   string mensaje = 2;
-}
-
-message ReleaseRequest {
-  string sku = 1;
-  int32 cantidad = 2;
-  string pedido_id = 3;
-}
-
-message ReleaseResponse {
-  bool exito = 1;
-  string mensaje = 2;
-}
-
-message UpdateRequest {
-  string sku = 1;
-  int32 nueva_cantidad = 2;
-  string motivo = 3;
-}
-
-message UpdateResponse {
-  bool exito = 1;
-  int32 stock_actual = 2;
 }

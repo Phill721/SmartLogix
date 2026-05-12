@@ -1,15 +1,21 @@
 package com.smartlogix.inventario.service;
 
-import com.smartlogix.inventario.dto.*;
-import com.smartlogix.inventario.entity.*;
-import com.smartlogix.inventario.exception.*;
+import com.smartlogix.inventario.dto.AjusteRequest;
+import com.smartlogix.inventario.dto.InventarioRequest;
+import com.smartlogix.inventario.entity.Inventario;
+import com.smartlogix.inventario.entity.MovimientoInventario;
+import com.smartlogix.inventario.entity.TipoMovimiento;
+import com.smartlogix.inventario.exception.ProductoNoEncontradoException;
+import com.smartlogix.inventario.exception.StockInsuficienteException;
 import com.smartlogix.inventario.kafka.InventarioKafkaProducer;
-import com.smartlogix.inventario.repository.*;
+import com.smartlogix.inventario.repository.InventarioRepository;
+import com.smartlogix.inventario.repository.MovimientoInventarioRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,7 +33,7 @@ public class InventarioServiceImpl implements InventarioService {
                 .productoId(request.getProductoId())
                 .sku(request.getSku())
                 .bodegaId(request.getBodegaId())
-                .stockDisponible(request.getStockInicial())
+                .stockTotal(request.getStockInicial())
                 .stockReservado(0)
                 .umbralMinimo(request.getUmbralMinimo())
                 .build();
@@ -54,14 +60,20 @@ public class InventarioServiceImpl implements InventarioService {
     public Inventario ajusteManual(Long id, AjusteRequest request) {
         Inventario inv = inventarioRepository.findById(id)
                 .orElseThrow(() -> new ProductoNoEncontradoException("ID de inventario no existe"));
-        
-        inv.setStockDisponible(inv.getStockDisponible() + request.getCantidad());
+
+        int nuevoStockTotal = inv.getStockTotal() + request.getCantidad();
+        if (nuevoStockTotal < inv.getStockReservado()) {
+            throw new IllegalArgumentException(
+                    "Ajuste inválido: el stock total no puede ser menor al stock reservado.");
+        }
+
+        inv.setStockTotal(nuevoStockTotal);
         Inventario guardado = inventarioRepository.save(inv);
-        
+
         registrarMovimiento(guardado, TipoMovimiento.AJUSTE, request.getCantidad(), request.getMotivo());
         verificarYNotificarStockBajo(guardado);
         kafkaProducer.enviarEventoActualizacion(guardado);
-        
+
         return guardado;
     }
 
@@ -73,7 +85,6 @@ public class InventarioServiceImpl implements InventarioService {
             throw new StockInsuficienteException("Stock insuficiente para realizar la reserva");
         }
 
-        inv.setStockDisponible(inv.getStockDisponible() - cantidad);
         inv.setStockReservado(inv.getStockReservado() + cantidad);
         inventarioRepository.save(inv);
 
@@ -86,8 +97,11 @@ public class InventarioServiceImpl implements InventarioService {
     @Transactional
     public void liberarStock(String sku, int cantidad, String pedidoId) {
         Inventario inv = obtenerPorSku(sku);
-        inv.setStockReservado(Math.max(0, inv.getStockReservado() - cantidad));
-        inv.setStockDisponible(inv.getStockDisponible() + cantidad);
+        if (cantidad > inv.getStockReservado()) {
+            throw new IllegalArgumentException("No se puede liberar más stock del que está reservado.");
+        }
+
+        inv.setStockReservado(inv.getStockReservado() - cantidad);
         inventarioRepository.save(inv);
 
         registrarMovimiento(inv, TipoMovimiento.LIBERACION, cantidad, "Liberación Pedido: " + pedidoId);
@@ -96,12 +110,33 @@ public class InventarioServiceImpl implements InventarioService {
 
     @Override
     @Transactional
+    public void confirmarVenta(String sku, int cantidad, String pedidoId) {
+        Inventario inv = obtenerPorSku(sku);
+        if (cantidad > inv.getStockReservado()) {
+            throw new IllegalArgumentException("No se puede confirmar una venta con más stock del reservado.");
+        }
+
+        inv.setStockReservado(inv.getStockReservado() - cantidad);
+        inv.setStockTotal(inv.getStockTotal() - cantidad);
+        inventarioRepository.save(inv);
+
+        registrarMovimiento(inv, TipoMovimiento.VENTA, cantidad, "Confirmación de venta Pedido: " + pedidoId);
+        verificarYNotificarStockBajo(inv);
+        kafkaProducer.enviarEventoActualizacion(inv);
+    }
+
+    @Override
+    @Transactional
     public void actualizarStock(String sku, int nuevaCantidad, String motivo) {
         Inventario inv = obtenerPorSku(sku);
-        int diferencia = nuevaCantidad - inv.getStockDisponible();
-        inv.setStockDisponible(nuevaCantidad);
+        if (nuevaCantidad < inv.getStockReservado()) {
+            throw new IllegalArgumentException("El stock total no puede ser menor al stock reservado.");
+        }
+
+        int diferencia = nuevaCantidad - inv.getStockTotal();
+        inv.setStockTotal(nuevaCantidad);
         inventarioRepository.save(inv);
-        
+
         registrarMovimiento(inv, TipoMovimiento.AJUSTE, diferencia, motivo);
         verificarYNotificarStockBajo(inv);
         kafkaProducer.enviarEventoActualizacion(inv);
@@ -109,7 +144,7 @@ public class InventarioServiceImpl implements InventarioService {
 
     @Override
     public List<MovimientoInventario> obtenerMovimientos(Long inventarioId) {
-        return movimientoRepository.findByInventario_IdOrderByFechaCreacionDesc(inventarioId);
+        return movimientoRepository.findByInventario_IdOrderByFechaDesc(inventarioId);
     }
 
     private void registrarMovimiento(Inventario inv, TipoMovimiento tipo, int qty, String motivo) {
@@ -118,6 +153,7 @@ public class InventarioServiceImpl implements InventarioService {
                 .tipoMovimiento(tipo)
                 .cantidad(qty)
                 .motivo(motivo)
+                .fecha(LocalDateTime.now())
                 .build();
         movimientoRepository.save(movimiento);
     }
