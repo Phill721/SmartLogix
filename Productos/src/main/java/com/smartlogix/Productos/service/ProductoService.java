@@ -1,17 +1,21 @@
 package com.smartlogix.Productos.service;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
 import com.smartlogix.Productos.dto.ProductoRequestDTO;
 import com.smartlogix.Productos.dto.ProductoResponseDTO;
+import com.smartlogix.Productos.exception.ProductoNotFoundException;
+import com.smartlogix.Productos.exception.SkuDuplicadoException;
 import com.smartlogix.Productos.factory.ProductoFactory;
 import com.smartlogix.Productos.mapper.ProductoMapper;
 import com.smartlogix.Productos.models.Producto;
 import com.smartlogix.Productos.repository.ProductoRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 public class ProductoService {
@@ -22,14 +26,22 @@ public class ProductoService {
         this.repository = repository;
     }
 
-    @CacheEvict(value = { "productos", "producto" }, allEntries = true)
+    @CacheEvict(value = {"productos", "producto"}, allEntries = true)
     public ProductoResponseDTO crearProducto(ProductoRequestDTO dto) {
+
+        if (repository.existsBySku(dto.getSku())) {
+            throw new SkuDuplicadoException("Ya existe un producto con ese SKU");
+        }
+
         Producto producto = ProductoFactory.crearProducto(dto);
+
         return ProductoMapper.toDTO(repository.save(producto));
     }
 
     @Cacheable(value = "productos")
-    public Page<ProductoResponseDTO> listarProductos(Pageable pageable) {
+    public Page<ProductoResponseDTO> listarProductos(int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
 
         return repository.findAll(pageable)
                 .map(ProductoMapper::toDTO);
@@ -37,36 +49,68 @@ public class ProductoService {
 
     @Cacheable(value = "producto", key = "#sku")
     public ProductoResponseDTO obtenerPorSku(String sku) {
+
         Producto producto = repository.findBySku(sku)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() ->
+                        new ProductoNotFoundException("Producto no encontrado")
+                );
+
         return ProductoMapper.toDTO(producto);
     }
 
-    @Cacheable(value = "categoria", key = "#categoria + '-' + #pageable.pageNumber")
-    public Page<ProductoResponseDTO> porCategoria(String categoria, Pageable pageable) {
+    public Page<ProductoResponseDTO> buscarPorNombre(
+            String nombre,
+            int page,
+            int size
+    ) {
 
-        return repository.findByCategoriaIgnoreCase(categoria, pageable)
-                .map(ProductoMapper::toDTO);
-    }
-
-    @Cacheable(value = "busquedaNombre", key = "#nombre + '-' + #pageable.pageNumber")
-    public Page<ProductoResponseDTO> buscarPorNombre(String nombre, Pageable pageable) {
+        Pageable pageable = PageRequest.of(page, size);
 
         return repository.findByNombreContainingIgnoreCase(nombre, pageable)
                 .map(ProductoMapper::toDTO);
     }
 
-    @CacheEvict(value = { "productos", "producto" }, allEntries = true)
-    public ProductoResponseDTO actualizar(String sku, ProductoRequestDTO dto) {
-        Producto producto = repository.findBySku(sku)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+    public Page<ProductoResponseDTO> buscarPorCategoria(
+            String categoria,
+            int page,
+            int size
+    ) {
 
-        // Validar SKU duplicado
+        Pageable pageable = PageRequest.of(page, size);
+
+        return repository.findByCategoriaIgnoreCase(categoria, pageable)
+                .map(ProductoMapper::toDTO);
+    }
+
+    public Page<ProductoResponseDTO> buscarPorPrecio(
+            BigDecimal min,
+            BigDecimal max,
+            int page,
+            int size
+    ) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return repository.findByPrecioBetween(min, max, pageable)
+                .map(ProductoMapper::toDTO);
+    }
+
+    @CacheEvict(value = {"productos", "producto"}, allEntries = true)
+    public ProductoResponseDTO actualizar(String sku, ProductoRequestDTO dto) {
+
+        Producto producto = repository.findBySku(sku)
+                .orElseThrow(() ->
+                        new ProductoNotFoundException("Producto no encontrado")
+                );
+
         if (!producto.getSku().equals(dto.getSku())
                 && repository.existsBySku(dto.getSku())) {
 
-            throw new RuntimeException("Ya existe un producto con el SKU: " + dto.getSku());
+            throw new SkuDuplicadoException(
+                    "Ya existe un producto con ese SKU"
+            );
         }
+
         producto.setSku(dto.getSku());
         producto.setNombre(dto.getNombre());
         producto.setDescripcion(dto.getDescripcion());
@@ -77,8 +121,15 @@ public class ProductoService {
         return ProductoMapper.toDTO(repository.save(producto));
     }
 
-    @CacheEvict(value = { "productos", "producto" }, allEntries = true)
-    public void eliminar(Long id) {
-        repository.deleteById(id);
+    @CacheEvict(value = {"productos", "producto"}, allEntries = true)
+    public void eliminar(String sku) {
+
+        Producto producto = repository.findBySku(sku)
+                .orElseThrow(() ->
+                        new ProductoNotFoundException("Producto no encontrado")
+                );
+
+        repository.delete(producto);
     }
 }
+
