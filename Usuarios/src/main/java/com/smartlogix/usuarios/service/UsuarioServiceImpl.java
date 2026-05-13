@@ -275,7 +275,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository.findByNombre(request.getNombre())
                 .orElseThrow(() -> {
