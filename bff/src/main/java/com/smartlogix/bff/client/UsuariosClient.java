@@ -1,20 +1,32 @@
 package com.smartlogix.bff.client;
 
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import com.smartlogix.bff.dto.LoginRequestDTO;
 import com.smartlogix.bff.dto.LoginResponseDTO;
 
-@FeignClient(
-        name = "usuarios-client",
-        url = "${usuarios.url}"
-)
-public interface UsuariosClient {
+@Service
+public class UsuariosClient {
 
-    @PostMapping("/api/usuarios/login")
-    LoginResponseDTO login(
-            @RequestBody LoginRequestDTO request
-    );
+    private final RestClient restClient;
+
+    public UsuariosClient(
+            @Value("${usuarios.url}") String usuariosUrl
+    ) {
+
+        this.restClient = RestClient.builder()
+                .baseUrl(usuariosUrl)
+                .build();
+    }
+
+    public LoginResponseDTO login(LoginRequestDTO request) {
+
+        return restClient.post()
+                .uri("/api/usuarios/login")
+                .body(request)
+                .retrieve()
+                .body(LoginResponseDTO.class);
+    }
 }
