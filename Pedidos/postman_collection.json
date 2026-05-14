@@ -1,0 +1,206 @@
+{
+	"info": {
+		"name": "SmartLogix - Pedidos API",
+		"description": "Colección de endpoints para el microservicio de Pedidos",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Carrito",
+			"item": [
+				{
+					"name": "Obtener Carrito",
+					"request": {
+						"method": "GET",
+						"url": "http://localhost:8082/api/carrito",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}",
+								"type": "text"
+							}
+						]
+					}
+				},
+				{
+					"name": "Agregar al Carrito",
+					"request": {
+						"method": "POST",
+						"url": "http://localhost:8082/api/carrito/agregar",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sku\": \"PROD001\",\n  \"nombreProducto\": \"Laptop Dell\",\n  \"cantidad\": 1,\n  \"precioUnitario\": 999.99\n}"
+						}
+					}
+				},
+				{
+					"name": "Remover del Carrito",
+					"request": {
+						"method": "DELETE",
+						"url": "http://localhost:8082/api/carrito/items/1",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Actualizar Cantidad Item",
+					"request": {
+						"method": "PUT",
+						"url": "http://localhost:8082/api/carrito/items/1?cantidad=5",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Vaciar Carrito",
+					"request": {
+						"method": "DELETE",
+						"url": "http://localhost:8082/api/carrito/vaciar",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Pedidos",
+			"item": [
+				{
+					"name": "Crear Pedido",
+					"request": {
+						"method": "POST",
+						"url": "http://localhost:8082/api/pedidos",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"sku\": \"PROD001\",\n      \"nombreProducto\": \"Laptop Dell\",\n      \"cantidad\": 2,\n      \"precioUnitario\": 999.99\n    },\n    {\n      \"sku\": \"PROD002\",\n      \"nombreProducto\": \"Mouse Logitech\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 49.99\n    }\n  ]\n}"
+						}
+					}
+				},
+				{
+					"name": "Confirmar Pedido",
+					"request": {
+						"method": "POST",
+						"url": "http://localhost:8082/api/pedidos/1/confirmar",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Cancelar Pedido",
+					"request": {
+						"method": "POST",
+						"url": "http://localhost:8082/api/pedidos/1/cancelar",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Obtener Detalle Pedido",
+					"request": {
+						"method": "GET",
+						"url": "http://localhost:8082/api/pedidos/1",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Listar Pedidos del Usuario",
+					"request": {
+						"method": "GET",
+						"url": "http://localhost:8082/api/pedidos?page=0&size=20",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Listar Pedidos por Estado",
+					"request": {
+						"method": "GET",
+						"url": "http://localhost:8082/api/pedidos?page=0&size=20&estado=CONFIRMADO",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				},
+				{
+					"name": "Listar Todos los Pedidos (Admin)",
+					"request": {
+						"method": "GET",
+						"url": "http://localhost:8082/api/pedidos/admin/todos?page=0&size=20",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {token}"
+							}
+						]
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "base_url",
+			"value": "http://localhost:8082",
+			"type": "string"
+		}
+	]
+}

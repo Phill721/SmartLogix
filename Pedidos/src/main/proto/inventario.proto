@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package com.smartlogix.inventario;
+
+option java_multiple_files = true;
+option java_package = "com.smartlogix.inventario";
+option java_outer_classname = "InventarioProto";
+
+service InventarioService {
+  rpc ValidarStock(InventarioRequest) returns (InventarioResponse);
+  rpc ReservarStock(InventarioRequest) returns (InventarioResponse);
+  rpc LiberarStock(InventarioRequest) returns (InventarioResponse);
+}
+
+message InventarioRequest {
+  string sku = 1;
+  int32 cantidad = 2;
+  string pedido_id = 3;
+}
+
+message InventarioResponse {
+  bool disponible = 1;
+  bool exitoso = 2;
+  string mensaje = 3;
+}
