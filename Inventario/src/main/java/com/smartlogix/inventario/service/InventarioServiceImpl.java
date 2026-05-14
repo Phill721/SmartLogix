@@ -2,6 +2,7 @@ package com.smartlogix.inventario.service;
 
 import com.smartlogix.inventario.dto.AjusteRequest;
 import com.smartlogix.inventario.dto.InventarioRequest;
+import com.smartlogix.inventario.dto.MovimientoDTO;
 import com.smartlogix.inventario.entity.Inventario;
 import com.smartlogix.inventario.entity.MovimientoInventario;
 import com.smartlogix.inventario.entity.TipoMovimiento;
@@ -33,13 +34,13 @@ public class InventarioServiceImpl implements InventarioService {
                 .productoId(request.getProductoId())
                 .sku(request.getSku())
                 .bodegaId(request.getBodegaId())
-                .stockTotal(request.getStockInicial())
+                .stockTotal(request.getStockTotal())
                 .stockReservado(0)
                 .umbralMinimo(request.getUmbralMinimo())
                 .build();
 
         Inventario guardado = inventarioRepository.save(inventario);
-        registrarMovimiento(guardado, TipoMovimiento.INICIAL, request.getStockInicial(), "Registro inicial de stock");
+        registrarMovimiento(guardado, TipoMovimiento.INICIAL, request.getStockTotal(), "Registro inicial de stock");
         return guardado;
     }
 
@@ -143,8 +144,19 @@ public class InventarioServiceImpl implements InventarioService {
     }
 
     @Override
-    public List<MovimientoInventario> obtenerMovimientos(Long inventarioId) {
-        return movimientoRepository.findByInventario_IdOrderByFechaDesc(inventarioId);
+    public List<MovimientoDTO> obtenerMovimientos(Long inventarioId) {
+        List<MovimientoInventario> movimientos = movimientoRepository.findByInventario_IdOrderByFechaDesc(inventarioId);
+
+        return movimientos.stream()
+                .map(mov -> MovimientoDTO.builder()
+                        .id(mov.getId())
+                        .cantidad(mov.getCantidad())
+                        .tipoMovimiento(mov.getTipoMovimiento().name())
+                        .motivo(mov.getMotivo())
+                        .fecha(mov.getFecha())
+                        .usuarioResponsable(mov.getUsuarioResponsable())
+                        .build())
+                .toList();
     }
 
     private void registrarMovimiento(Inventario inv, TipoMovimiento tipo, int qty, String motivo) {

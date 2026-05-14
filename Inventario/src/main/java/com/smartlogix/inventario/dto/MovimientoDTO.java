@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MovimientoDTO {
     private Long id;
-    private String sku;
-    private TipoMovimiento tipoMovimiento;
     private Integer cantidad;
+    private String tipoMovimiento;
     private String motivo;
-    private LocalDateTime fechaCreacion;
+    private LocalDateTime fecha;
+    private String usuarioResponsable;
 }

@@ -14,7 +14,7 @@
     <name>servicio-inventario</name>
 
     <properties>
-        <java.version>22</java.version>
+        <java.version>17</java.version>
         <grpc.version>1.68.0</grpc.version>
         <protobuf-java.version>3.25.1</protobuf-java.version>
         <spring-cloud.version>2024.0.1</spring-cloud.version>

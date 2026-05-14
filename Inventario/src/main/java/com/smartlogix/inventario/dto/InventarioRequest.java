@@ -7,6 +7,6 @@ public class InventarioRequest {
     private String sku;
     private Long productoId;
     private Long bodegaId;
-    private Integer stockInicial;
+    private Integer stockTotal;
     private Integer umbralMinimo;
 }

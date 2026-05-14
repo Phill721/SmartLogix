@@ -2,6 +2,7 @@ package com.smartlogix.inventario.service;
 
 import com.smartlogix.inventario.dto.AjusteRequest;
 import com.smartlogix.inventario.dto.InventarioRequest;
+import com.smartlogix.inventario.dto.MovimientoDTO;
 import com.smartlogix.inventario.entity.Inventario;
 import com.smartlogix.inventario.entity.MovimientoInventario;
 
@@ -25,5 +26,5 @@ public interface InventarioService {
 
     void actualizarStock(String sku, int nuevaCantidad, String motivo);
 
-    List<MovimientoInventario> obtenerMovimientos(Long inventarioId);
+    List<MovimientoDTO> obtenerMovimientos(Long inventarioId);
 }

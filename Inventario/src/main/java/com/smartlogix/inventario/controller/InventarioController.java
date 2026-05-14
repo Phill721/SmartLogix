@@ -2,6 +2,7 @@ package com.smartlogix.inventario.controller;
 
 import com.smartlogix.inventario.dto.AjusteRequest;
 import com.smartlogix.inventario.dto.InventarioRequest;
+import com.smartlogix.inventario.dto.MovimientoDTO;
 import com.smartlogix.inventario.entity.Inventario;
 import com.smartlogix.inventario.entity.MovimientoInventario;
 import com.smartlogix.inventario.service.InventarioService;
@@ -45,7 +46,7 @@ public class InventarioController {
     }
 
     @GetMapping("/{id}/movimientos")
-    public ResponseEntity<List<MovimientoInventario>> obtenerMovimientos(@PathVariable Long id) {
+    public ResponseEntity<List<MovimientoDTO>> obtenerMovimientos(@PathVariable Long id) {
         return ResponseEntity.ok(service.obtenerMovimientos(id));
     }
 }

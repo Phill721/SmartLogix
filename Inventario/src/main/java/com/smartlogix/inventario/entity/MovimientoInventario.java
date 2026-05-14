@@ -33,8 +33,9 @@ public class MovimientoInventario {
     @Column(nullable = false)
     private String motivo;
 
-    @Column(nullable = false)
+    @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fecha;
 
+    @Column(name = "usuario_responsable")
     private String usuarioResponsable;
 }
