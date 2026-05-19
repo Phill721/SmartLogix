@@ -2,10 +2,14 @@ package com.smartlogix.pedidos.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
 
 @Slf4j
 @Component
@@ -15,12 +19,16 @@ public class JwtUtil {
     @Value("${jwt.secret:smartlogix-secret-key-hmac-sha256}")
     private String secretKey;
 
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
+    }
+
     public Long extractUsuarioId(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(secretKey.getBytes())
+            Claims claims = (Claims) Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
                     .build()
-                    .parseClaimsJws(token)
+                    .parse(token)
                     .getBody();
             
             Object usuarioId = claims.get("usuarioId");
@@ -36,10 +44,10 @@ public class JwtUtil {
 
     public String extractUsername(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(secretKey.getBytes())
+            Claims claims = (Claims) Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
                     .build()
-                    .parseClaimsJws(token)
+                    .parse(token)
                     .getBody();
             return claims.getSubject();
         } catch (Exception e) {
@@ -51,9 +59,9 @@ public class JwtUtil {
     public boolean isTokenValid(String token) {
         try {
             Jwts.parserBuilder()
-                    .setSigningKey(secretKey.getBytes())
+                    .setSigningKey(getSigningKey())
                     .build()
-                    .parseClaimsJws(token);
+                    .parse(token);
             return true;
         } catch (Exception e) {
             log.error("Token inválido: {}", e.getMessage());

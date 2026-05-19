@@ -1,6 +1,6 @@
 package com.smartlogix.pedidos.kafka;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PedidoKafkaConsumer {
 
-    private final ObjectMapper objectMapper;
+
 
     @KafkaListener(topics = "stock-reservado", groupId = "grupo-pedidos")
     public void listenStockReservado(String payload) {

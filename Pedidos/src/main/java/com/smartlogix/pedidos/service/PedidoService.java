@@ -11,13 +11,12 @@ import com.smartlogix.pedidos.entity.Pedido;
 import com.smartlogix.pedidos.event.PedidoCanceladoEvent;
 import com.smartlogix.pedidos.event.PedidoCreadoEvent;
 import com.smartlogix.pedidos.exception.*;
-import com.smartlogix.pedidos.grpc.InventarioGrpcClient;
+// import com.smartlogix.pedidos.grpc.InventarioGrpcClient; // Temporalmente comentado
 import com.smartlogix.pedidos.kafka.PedidoKafkaProducer;
 import com.smartlogix.pedidos.mapper.PedidoMapper;
 import com.smartlogix.pedidos.model.EstadoPedido;
 import com.smartlogix.pedidos.repository.CarritoRepository;
 import com.smartlogix.pedidos.repository.PedidoRepository;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -40,10 +39,9 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final CarritoRepository carritoRepository;
-    private final InventarioGrpcClient inventarioGrpcClient;
+    // private final InventarioGrpcClient inventarioGrpcClient; // Temporalmente comentado
     private final PedidoKafkaProducer kafkaProducer;
     private final PedidoMapper mapper;
-    private final CircuitBreaker inventarioCircuitBreaker;
 
     @Retry(name = "inventario", fallbackMethod = "crearPedidoFallback")
     @CircuitBreaker(name = "inventario", fallbackMethod = "crearPedidoFallback")
@@ -179,18 +177,20 @@ public class PedidoService {
     // Métodos privados
 
     private void validarStockDisponible(CrearPedidoRequestDTO request) {
-        for (var item : request.getItems()) {
-            boolean stockDisponible = inventarioGrpcClient.validarStockDisponible(item.getSku(), item.getCantidad());
-            if (!stockDisponible) {
-                throw new StockInsuficienteException("Stock insuficiente para SKU: " + item.getSku());
-            }
-        }
+        // TODO: Implementar validación de stock con gRPC
+        // for (var item : request.getItems()) {
+        //     boolean stockDisponible = inventarioGrpcClient.validarStockDisponible(item.getSku(), item.getCantidad());
+        //     if (!stockDisponible) {
+        //         throw new StockInsuficienteException("Stock insuficiente para SKU: " + item.getSku());
+        //     }
+        // }
     }
 
     private void reservarStockEnInventario(Pedido pedido) {
-        for (ItemPedido item : pedido.getItems()) {
-            inventarioGrpcClient.reservarStock(item.getSku(), item.getCantidad(), pedido.getId().toString());
-        }
+        // TODO: Implementar reserva de stock con gRPC
+        // for (ItemPedido item : pedido.getItems()) {
+        //     inventarioGrpcClient.reservarStock(item.getSku(), item.getCantidad(), pedido.getId().toString());
+        // }
     }
 
     private void publicarPedidoCreado(Pedido pedido) {

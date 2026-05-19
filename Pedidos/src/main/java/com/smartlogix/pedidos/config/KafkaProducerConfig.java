@@ -25,16 +25,28 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaTemplate<String, PedidoCreadoEvent> kafkaTemplatePedidoCreado() {
-        return new KafkaTemplate<>(producerFactory());
+        return new KafkaTemplate<>(producerFactoryCreado());
     }
 
     @Bean
     public KafkaTemplate<String, PedidoCanceladoEvent> kafkaTemplatePedidoCancelado() {
-        return new KafkaTemplate<>(producerFactory());
+        return new KafkaTemplate<>(producerFactoryCancelado());
     }
 
     @Bean
-    public DefaultKafkaProducerFactory<String, Object> producerFactory() {
+    public DefaultKafkaProducerFactory<String, PedidoCreadoEvent> producerFactoryCreado() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
+        configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean
+    public DefaultKafkaProducerFactory<String, PedidoCanceladoEvent> producerFactoryCancelado() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
