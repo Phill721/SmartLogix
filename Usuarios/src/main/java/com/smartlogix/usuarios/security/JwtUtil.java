@@ -27,12 +27,13 @@ public class JwtUtil {
         return generarToken(nombre, rol, permiso, permiso != null ? List.of(permiso) : List.of());
     }
 
-    public String generarToken(String nombre, String rol, String permiso, List<String> permisos) {
+    public String generarToken(Long usuarioId, String nombre, String rol, String permiso, List<String> permisos) {
         Date ahora = new Date();
         Date expiracion = new Date(ahora.getTime() + expiration);
 
         return Jwts.builder()
                 .setSubject(nombre)
+                .claim("usuarioId", usuarioId)
                 .claim("rol", rol)
                 .claim("role", rol)
                 .claim("permiso", permiso)
@@ -41,6 +42,10 @@ public class JwtUtil {
                 .setExpiration(expiracion)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String generarToken(String nombre, String rol, String permiso, List<String> permisos) {
+        return generarToken(null, nombre, rol, permiso, permisos);
     }
 
     public String generarRefreshToken(String nombre) {

@@ -333,6 +333,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         loginAttemptService.registrarIntentoExitoso(usuario);
 
         String token = jwtUtil.generarToken(
+            usuario.getId(),
             usuario.getNombre(),
             usuario.getRol().name(),
             usuario.getRol().getPermiso(),
