@@ -164,6 +164,115 @@ netstat -ano | findstr 9090
 
 ## Testing
 
+### JSON de ejemplo para crear y autenticar un usuario
+
+#### 1) Crear usuario en Usuarios
+Endpoint:
+```bash
+POST http://localhost:8081/api/usuarios/register
+```
+
+Body:
+```json
+{
+  "nombre": "cliente_demo",
+  "email": "cliente.demo@smartlogix.local",
+  "contrasena": "Cliente123*",
+  "rol": "USUARIO"
+}
+```
+
+#### 2) Autenticar usuario en Usuarios
+Endpoint:
+```bash
+POST http://localhost:8081/api/usuarios/login
+```
+
+Body:
+```json
+{
+  "nombre": "cliente_demo",
+  "contrasena": "Cliente123*"
+}
+```
+
+Respuesta esperada:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "nombre": "cliente_demo",
+  "rol": "USUARIO",
+  "permiso": "VISTA_TIENDA",
+  "permisos": ["VISTA_TIENDA"]
+}
+```
+
+### Paso a paso para probar completo el micro de Pedidos
+
+1. Levantar los servicios requeridos:
+   - MySQL en `3306`
+   - Kafka en `9092`
+   - Inventario gRPC en `9090`
+   - Usuarios en `8081`
+   - Pedidos en `8082`
+
+2. Crear el usuario de prueba con el JSON anterior.
+
+3. Ejecutar el login y copiar el `token` devuelto.
+
+4. Usar ese token en el header:
+```bash
+Authorization: Bearer {token}
+```
+
+5. Agregar productos al carrito:
+```bash
+curl -X POST http://localhost:8082/api/carrito/agregar \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sku": "PROD001",
+    "nombreProducto": "Laptop Dell",
+    "cantidad": 1,
+    "precioUnitario": 999.99
+  }'
+```
+
+6. Crear el pedido:
+```bash
+curl -X POST http://localhost:8082/api/pedidos \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "sku": "PROD001",
+        "nombreProducto": "Laptop Dell",
+        "cantidad": 1,
+        "precioUnitario": 999.99
+      }
+    ]
+  }'
+```
+
+7. Confirmar el pedido usando el `id` devuelto:
+```bash
+curl -X POST http://localhost:8082/api/pedidos/1/confirmar \
+  -H "Authorization: Bearer {token}"
+```
+
+8. Consultar el detalle o el listado del usuario:
+```bash
+curl http://localhost:8082/api/pedidos/1 \
+  -H "Authorization: Bearer {token}"
+```
+
+9. Si quieres probar el flujo inverso, cancelar el pedido:
+```bash
+curl -X POST http://localhost:8082/api/pedidos/1/cancelar \
+  -H "Authorization: Bearer {token}"
+```
+
 ### Crear Token JWT (desde Usuarios)
 ```bash
 curl -X POST http://localhost:8081/api/usuarios/login \
@@ -188,6 +297,45 @@ curl -X POST http://localhost:8082/api/pedidos \
     }]
   }'
 ```
+
+### Cambiar el estado de un pedido
+
+En este microservicio no existe un `PUT` para cambiar el estado del pedido. Los cambios de estado se hacen con `POST`:
+
+#### Confirmar pedido
+```bash
+curl -X POST http://localhost:8082/api/pedidos/{pedidoId}/confirmar \
+  -H "Authorization: Bearer {token}"
+```
+
+#### Cancelar pedido
+```bash
+curl -X POST http://localhost:8082/api/pedidos/{pedidoId}/cancelar \
+  -H "Authorization: Bearer {token}"
+```
+
+Pasos:
+1. Crear el pedido con `POST /api/pedidos`.
+2. Copiar el `id` devuelto en la respuesta.
+3. Ejecutar `POST /api/pedidos/{pedidoId}/confirmar` o `POST /api/pedidos/{pedidoId}/cancelar` según el flujo que quieras probar.
+4. Consultar el pedido con `GET /api/pedidos/{pedidoId}` para validar el nuevo estado.
+
+### Endpoint PUT del carrito
+
+El único `PUT` relevante en este microservicio es para cambiar la cantidad de un item del carrito:
+
+```bash
+curl -X PUT "http://localhost:8082/api/carrito/items/{itemId}?cantidad=3" \
+  -H "Authorization: Bearer {token}"
+```
+
+Este endpoint no recibe JSON en el body. La cantidad se envía como query param `cantidad`.
+
+Pasos:
+1. Agregar un producto al carrito con `POST /api/carrito/agregar`.
+2. Consultar el carrito con `GET /api/carrito` para obtener el `itemId`.
+3. Ejecutar el `PUT /api/carrito/items/{itemId}?cantidad=3`.
+4. Volver a consultar el carrito para verificar que la cantidad y el subtotal cambiaron.
 
 ## Contacto y Soporte
 
