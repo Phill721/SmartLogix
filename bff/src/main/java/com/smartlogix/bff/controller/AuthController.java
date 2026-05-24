@@ -20,7 +20,7 @@ import com.smartlogix.bff.dto.UsuarioRequestDTO;
 import com.smartlogix.bff.dto.UsuarioResponseDTO;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/bff/usuarios")
 public class AuthController {
 
     private final UsuariosClient usuariosClient;
