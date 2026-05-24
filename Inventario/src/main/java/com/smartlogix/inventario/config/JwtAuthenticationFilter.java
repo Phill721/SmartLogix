@@ -1,20 +1,19 @@
 package com.smartlogix.inventario.config;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.Collection;
 
 @Component
 @RequiredArgsConstructor
@@ -23,38 +22,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
+    protected void doFilterInternal(
+            HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        final String jwt;
-        final String username;
+        String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        if (authHeader != null
+                && authHeader.startsWith("Bearer ")) {
 
-        jwt = authHeader.substring(7);
-        try {
-            username = jwtUtil.extractUsername(jwt);
+            String token = authHeader.substring(7);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                if (jwtUtil.validateToken(jwt, username)) {
-                    Collection<? extends GrantedAuthority> authorities = jwtUtil.extractAuthorities(jwt);
+            if (jwtUtil.validarToken(token)
+                    && SecurityContextHolder.getContext()
+                    .getAuthentication() == null) {
 
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            authorities);
+                String nombre = jwtUtil.extraerNombre(token);
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
+                String rol = jwtUtil.extraerRol(token);
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                nombre,
+                                null,
+                                List.of(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_" + rol
+                                        )
+                                )
+                        );
+
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
             }
-        } catch (Exception e) {
-            logger.error("Error al validar el token JWT en Inventario: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

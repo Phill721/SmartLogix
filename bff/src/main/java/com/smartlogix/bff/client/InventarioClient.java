@@ -39,18 +39,26 @@ public class InventarioClient {
                 .body(InventarioDTO.class);
     }
 
-    public InventarioDTO obtenerPorSku(String sku) {
+    public InventarioDTO obtenerPorSku(
+            String token,
+            String sku
+    ) {
 
         return restClient.get()
                 .uri("/api/inventario/{sku}", sku)
+                .header("Authorization", token)
                 .retrieve()
                 .body(InventarioDTO.class);
     }
 
-    public List<InventarioDTO> obtenerPorBodega(Long bodegaId) {
+    public List<InventarioDTO> obtenerPorBodega(
+            String token,
+            Long bodegaId
+    ) {
 
         return restClient.get()
                 .uri("/api/inventario/bodega/{bodegaId}", bodegaId)
+                .header("Authorization", token)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
@@ -69,10 +77,14 @@ public class InventarioClient {
                 .body(InventarioDTO.class);
     }
 
-    public List<MovimientoDTO> obtenerMovimientos(Long id) {
+    public List<MovimientoDTO> obtenerMovimientos(
+            String token,
+            Long id
+    ) {
 
         return restClient.get()
                 .uri("/api/inventario/{id}/movimientos", id)
+                .header("Authorization", token)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }

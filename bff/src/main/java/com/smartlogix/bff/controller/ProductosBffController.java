@@ -124,7 +124,7 @@ public class ProductosBffController {
         );
     }
 
-    @GetMapping("/{sku}/completo")
+    @GetMapping("/completo/{sku}")
     public ProductoCompletoDTO obtenerCompleto(
             @PathVariable String sku,
              @RequestHeader("Authorization") String token
@@ -134,7 +134,7 @@ public class ProductosBffController {
                 = productosClient.obtenerPorSku(token, sku);
 
         InventarioDTO inventario
-                = inventarioClient.obtenerPorSku(sku);
+                = inventarioClient.obtenerPorSku(token, sku);
 
         return ProductoCompletoDTO.builder()
                 .producto(producto)

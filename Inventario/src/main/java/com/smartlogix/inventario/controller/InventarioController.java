@@ -23,7 +23,7 @@ public class InventarioController {
     private final InventarioService service;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'VENDEDOR')")
     public ResponseEntity<Inventario> crear(@Valid @RequestBody InventarioRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crearInventario(request));
     }
@@ -39,7 +39,7 @@ public class InventarioController {
     }
 
     @PostMapping("/{id}/ajuste")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Inventario> ajusteManual(@PathVariable Long id,
             @Valid @RequestBody AjusteRequest request) {
         return ResponseEntity.ok(service.ajusteManual(id, request));

@@ -43,3 +43,7 @@ resilience4j:
 
 inventario:
   umbral-stock-bajo: 10
+
+jwt:
+  secret: smartlogix-secret-key-hmac-sha256
+  expiration: 900000
