@@ -1,11 +1,12 @@
 package com.smartlogix.usuarios.service;
 
+import org.springframework.data.domain.Page;
+
 import com.smartlogix.usuarios.dto.LoginRequest;
 import com.smartlogix.usuarios.dto.LoginResponse;
 import com.smartlogix.usuarios.dto.UsuarioRequest;
 import com.smartlogix.usuarios.dto.UsuarioResponse;
 import com.smartlogix.usuarios.model.Rol;
-import org.springframework.data.domain.Page;
 
 public interface UsuarioService {
 
@@ -27,4 +28,6 @@ public interface UsuarioService {
     LoginResponse login(LoginRequest request);
 
     void desbloquearCuenta(Long id);
+
+    boolean esUsuarioActual(Long id);
 }

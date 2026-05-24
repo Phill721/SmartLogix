@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.smartlogix.bff.client.InventarioClient;
 import com.smartlogix.bff.client.ProductosClient;
+import com.smartlogix.bff.dto.InventarioDTO;
 import com.smartlogix.bff.dto.PageResponseDTO;
+import com.smartlogix.bff.dto.ProductoCompletoDTO;
 import com.smartlogix.bff.dto.ProductoRequestDTO;
 import com.smartlogix.bff.dto.ProductoResponseDTO;
 
@@ -21,11 +24,14 @@ import com.smartlogix.bff.dto.ProductoResponseDTO;
 public class ProductosBffController {
 
     private final ProductosClient productosClient;
+    private final InventarioClient inventarioClient;
 
     public ProductosBffController(
-            ProductosClient productosClient
+            ProductosClient productosClient,
+            InventarioClient inventarioClient
     ) {
         this.productosClient = productosClient;
+        this.inventarioClient = inventarioClient;
     }
 
     @GetMapping
@@ -116,5 +122,23 @@ public class ProductosBffController {
                 page,
                 size
         );
+    }
+
+    @GetMapping("/{sku}/completo")
+    public ProductoCompletoDTO obtenerCompleto(
+            @PathVariable String sku,
+             @RequestHeader("Authorization") String token
+    ) {
+
+        ProductoResponseDTO producto
+                = productosClient.obtenerPorSku(token, sku);
+
+        InventarioDTO inventario
+                = inventarioClient.obtenerPorSku(sku);
+
+        return ProductoCompletoDTO.builder()
+                .producto(producto)
+                .inventario(inventario)
+                .build();
     }
 }

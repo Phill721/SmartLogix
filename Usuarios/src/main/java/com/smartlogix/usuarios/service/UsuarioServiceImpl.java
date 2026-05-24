@@ -1,5 +1,23 @@
 package com.smartlogix.usuarios.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.smartlogix.usuarios.dto.LoginRequest;
 import com.smartlogix.usuarios.dto.LoginResponse;
 import com.smartlogix.usuarios.dto.UsuarioRequest;
@@ -13,23 +31,8 @@ import com.smartlogix.usuarios.model.TipoEvento;
 import com.smartlogix.usuarios.model.Usuario;
 import com.smartlogix.usuarios.repository.UsuarioRepository;
 import com.smartlogix.usuarios.security.JwtUtil;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -420,5 +423,19 @@ public class UsuarioServiceImpl implements UsuarioService {
         String orden = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "id";
         Sort.Direction direccion = "desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC;
         return PageRequest.of(pagina, tamanio, Sort.by(direccion, orden));
+    }
+
+    @Override
+    public boolean esUsuarioActual(Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        String email = authentication.getName();
+        Usuario usuarioActual = usuarioRepository.findByEmail(email)
+                .orElse(null);
+
+        return usuarioActual != null && usuarioActual.getId().equals(id);
     }
 }
