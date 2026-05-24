@@ -11,11 +11,13 @@ import java.util.stream.Collectors;
 public class PedidoMapper {
 
     public Pedido toPedido(CrearPedidoRequestDTO dto) {
-        Pedido pedido = Pedido.builder()
-                .items(dto.getItems().stream()
-                        .map(this::toItemPedido)
-                        .collect(Collectors.toList()))
-                .build();
+        Pedido pedido = Pedido.builder().build();
+
+        pedido.setItems(dto.getItems().stream()
+                .map(this::toItemPedido)
+                .peek(item -> item.setPedido(pedido))
+                .collect(Collectors.toList()));
+
         pedido.calcularTotal();
         return pedido;
     }
