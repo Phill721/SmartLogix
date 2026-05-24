@@ -11,6 +11,7 @@ import com.smartlogix.bff.dto.AjusteRequestDTO;
 import com.smartlogix.bff.dto.InventarioDTO;
 import com.smartlogix.bff.dto.InventarioRequestDTO;
 import com.smartlogix.bff.dto.MovimientoDTO;
+import com.smartlogix.bff.exception.ApiClientException;
 
 @Service
 public class InventarioClient {
@@ -36,6 +37,15 @@ public class InventarioClient {
                 .header("Authorization", token)
                 .body(request)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(InventarioDTO.class);
     }
 
@@ -48,6 +58,15 @@ public class InventarioClient {
                 .uri("/api/inventario/{sku}", sku)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(InventarioDTO.class);
     }
 
@@ -60,6 +79,15 @@ public class InventarioClient {
                 .uri("/api/inventario/bodega/{bodegaId}", bodegaId)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(new ParameterizedTypeReference<>() {});
     }
 
@@ -74,6 +102,15 @@ public class InventarioClient {
                 .header("Authorization", token)
                 .body(request)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(InventarioDTO.class);
     }
 
@@ -86,6 +123,15 @@ public class InventarioClient {
                 .uri("/api/inventario/{id}/movimientos", id)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(new ParameterizedTypeReference<>() {});
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClient;
 import com.smartlogix.bff.dto.PageResponseDTO;
 import com.smartlogix.bff.dto.ProductoRequestDTO;
 import com.smartlogix.bff.dto.ProductoResponseDTO;
+import com.smartlogix.bff.exception.ApiClientException;
 
 @Service
 public class ProductosClient {
@@ -38,7 +39,17 @@ public class ProductosClient {
                 )
                 .header("Authorization", token)
                 .retrieve()
-                .body(new ParameterizedTypeReference<PageResponseDTO<ProductoResponseDTO>>() {});
+                .onStatus(
+                        status -> status.isError(),
+                        (request, response) -> {
+                            throw new ApiClientException(
+                                    response.getStatusCode(),
+                                    new String(response.getBody().readAllBytes())
+                            );
+                        }
+                )
+                .body(new ParameterizedTypeReference<PageResponseDTO<ProductoResponseDTO>>() {
+                });
     }
 
     public ProductoResponseDTO obtenerPorSku(String token, String sku) {
@@ -47,6 +58,15 @@ public class ProductosClient {
                 .uri("/api/productos/{sku}", sku)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (request, response) -> {
+                            throw new ApiClientException(
+                                    response.getStatusCode(),
+                                    new String(response.getBody().readAllBytes())
+                            );
+                        }
+                )
                 .body(ProductoResponseDTO.class);
     }
 
@@ -60,6 +80,15 @@ public class ProductosClient {
                 .header("Authorization", token)
                 .body(dto)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (request, response) -> {
+                            throw new ApiClientException(
+                                    response.getStatusCode(),
+                                    new String(response.getBody().readAllBytes())
+                            );
+                        }
+                )
                 .body(ProductoResponseDTO.class);
     }
 
@@ -80,6 +109,15 @@ public class ProductosClient {
                 )
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (request, response) -> {
+                            throw new ApiClientException(
+                                    response.getStatusCode(),
+                                    new String(response.getBody().readAllBytes())
+                            );
+                        }
+                )
                 .body(new ParameterizedTypeReference<>() {});
     }
 
@@ -94,6 +132,15 @@ public class ProductosClient {
                 .header("Authorization", token)
                 .body(dto)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (request, response) -> {
+                            throw new ApiClientException(
+                                    response.getStatusCode(),
+                                    new String(response.getBody().readAllBytes())
+                            );
+                        }
+                )
                 .body(ProductoResponseDTO.class);
     }
 
@@ -106,6 +153,15 @@ public class ProductosClient {
                 .uri("/api/productos/{sku}", sku)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (request, response) -> {
+                            throw new ApiClientException(
+                                    response.getStatusCode(),
+                                    new String(response.getBody().readAllBytes())
+                            );
+                        }
+                )
                 .toBodilessEntity();
     }
 
@@ -126,6 +182,15 @@ public class ProductosClient {
                 )
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (request, response) -> {
+                            throw new ApiClientException(
+                                    response.getStatusCode(),
+                                    new String(response.getBody().readAllBytes())
+                            );
+                        }
+                )
                 .body(new ParameterizedTypeReference<>() {});
     }
 }

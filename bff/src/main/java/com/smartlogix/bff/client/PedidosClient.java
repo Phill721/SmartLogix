@@ -1,10 +1,17 @@
 package com.smartlogix.bff.client;
 
-import com.smartlogix.bff.dto.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+
+import com.smartlogix.bff.dto.AgregarAlCarritoRequestDTO;
+import com.smartlogix.bff.dto.CarritoResponseDTO;
+import com.smartlogix.bff.dto.CrearPedidoRequestDTO;
+import com.smartlogix.bff.dto.PageResponseDTO;
+import com.smartlogix.bff.dto.PedidoListaResponseDTO;
+import com.smartlogix.bff.dto.PedidoResponseDTO;
+import com.smartlogix.bff.exception.ApiClientException;
 
 @Service
 public class PedidosClient {
@@ -26,6 +33,15 @@ public class PedidosClient {
                 .uri("/api/carrito")
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(CarritoResponseDTO.class);
     }
 
@@ -39,6 +55,15 @@ public class PedidosClient {
                 .header("Authorization", token)
                 .body(request)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(CarritoResponseDTO.class);
     }
 
@@ -51,6 +76,15 @@ public class PedidosClient {
                 .uri("/api/carrito/items/{itemId}", itemId)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(CarritoResponseDTO.class);
     }
 
@@ -67,6 +101,15 @@ public class PedidosClient {
                         .build(itemId))
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(CarritoResponseDTO.class);
     }
 
@@ -76,6 +119,15 @@ public class PedidosClient {
                 .uri("/api/carrito/vaciar")
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .toBodilessEntity();
     }
 
@@ -89,6 +141,15 @@ public class PedidosClient {
                 .header("Authorization", token)
                 .body(request)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(PedidoResponseDTO.class);
     }
 
@@ -101,6 +162,15 @@ public class PedidosClient {
                 .uri("/api/pedidos/{pedidoId}/confirmar", pedidoId)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(PedidoResponseDTO.class);
     }
 
@@ -113,6 +183,15 @@ public class PedidosClient {
                 .uri("/api/pedidos/{pedidoId}/cancelar", pedidoId)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(PedidoResponseDTO.class);
     }
 
@@ -125,6 +204,15 @@ public class PedidosClient {
                 .uri("/api/pedidos/{pedidoId}", pedidoId)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(PedidoResponseDTO.class);
     }
 
@@ -150,6 +238,15 @@ public class PedidosClient {
                 })
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(new ParameterizedTypeReference<>() {});
     }
 }

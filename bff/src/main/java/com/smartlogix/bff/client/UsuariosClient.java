@@ -10,6 +10,7 @@ import com.smartlogix.bff.dto.LoginResponseDTO;
 import com.smartlogix.bff.dto.PageResponseDTO;
 import com.smartlogix.bff.dto.UsuarioRequestDTO;
 import com.smartlogix.bff.dto.UsuarioResponseDTO;
+import com.smartlogix.bff.exception.ApiClientException;
 
 @Service
 public class UsuariosClient {
@@ -31,6 +32,15 @@ public class UsuariosClient {
                 .uri("/api/usuarios/login")
                 .body(request)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(LoginResponseDTO.class);
     }
 
@@ -42,6 +52,15 @@ public class UsuariosClient {
                 .uri("/api/usuarios/register")
                 .body(request)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(UsuarioResponseDTO.class);
     }
 
@@ -60,6 +79,15 @@ public class UsuariosClient {
                 )
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(new ParameterizedTypeReference<>() {});
     }
 
@@ -72,6 +100,15 @@ public class UsuariosClient {
                 .uri("/api/usuarios/{id}", id)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(UsuarioResponseDTO.class);
     }
 
@@ -86,6 +123,15 @@ public class UsuariosClient {
                 .header("Authorization", token)
                 .body(request)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .body(UsuarioResponseDTO.class);
     }
 
@@ -98,6 +144,15 @@ public class UsuariosClient {
                 .uri("/api/usuarios/{id}", id)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .toBodilessEntity();
     }
 
@@ -110,6 +165,15 @@ public class UsuariosClient {
                 .uri("/api/usuarios/{id}/desactivar", id)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .toBodilessEntity();
     }
 
@@ -122,6 +186,15 @@ public class UsuariosClient {
                 .uri("/api/usuarios/{id}/desbloquear", id)
                 .header("Authorization", token)
                 .retrieve()
+                .onStatus(
+                        status -> status.isError(),
+                        (clientRequest, response) -> {
+                        throw new ApiClientException(
+                                response.getStatusCode(),
+                                new String(response.getBody().readAllBytes())
+                        );
+                        }
+                )
                 .toBodilessEntity();
     }
 }
