@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     container_name: db_inventario
     environment:
-      MYSQL_DATABASE: db_inventario
+      MYSQL_DATABASE: smartlogix_inventario
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3307:3306"
+      - "3307:3306" # Docker mapea el puerto interno 3306 al externo 3307 de tu Windows
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 5s
@@ -16,11 +16,13 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
+    container_name: inventario-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
+    container_name: inventario-kafka
     depends_on:
       - zookeeper
     ports:
@@ -30,18 +32,3 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  servicio-inventario:
-    build: .
-    container_name: servicio-inventario
-    ports:
-      - "8083:8083"
-      - "9090:9090"
-    depends_on:
-      db_inventario:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db_inventario:3306/db_inventario?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
