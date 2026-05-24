@@ -76,7 +76,7 @@ curl http://localhost:8082/actuator/health
 
 ## Integración con BFF
 
-Cuando el BFF de usuarios-productos esté listo, agregar los siguientes endpoints:
+Cuando el BFF de usuarios-productos esté listo, agregar los siguientes endpoints
 
 ### En el BFF (application.properties):
 ```properties
