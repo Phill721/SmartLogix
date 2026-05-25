@@ -47,3 +47,5 @@ inventario:
 jwt:
   secret: smartlogix-secret-key-hmac-sha256
   expiration: 900000
+productos:
+  url: http://localhost:8084

@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface InventarioService {
 
-    Inventario crearInventario(InventarioRequest request);
+    Inventario crearInventario(String token, InventarioRequest request);
 
     Inventario obtenerPorSku(String sku);
 

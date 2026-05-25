@@ -24,8 +24,9 @@ public class InventarioController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'VENDEDOR')")
-    public ResponseEntity<Inventario> crear(@Valid @RequestBody InventarioRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.crearInventario(request));
+    public ResponseEntity<Inventario> crear(@Valid @RequestBody InventarioRequest request, @RequestHeader("Authorization") String token) {
+    
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.crearInventario(token, request));
     }
 
     @GetMapping("/{sku}")

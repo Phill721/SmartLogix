@@ -1,5 +1,6 @@
 package com.smartlogix.inventario.service;
 
+import com.smartlogix.inventario.client.ProductosClient;
 import com.smartlogix.inventario.dto.AjusteRequest;
 import com.smartlogix.inventario.dto.InventarioRequest;
 import com.smartlogix.inventario.dto.MovimientoDTO;
@@ -26,10 +27,11 @@ public class InventarioServiceImpl implements InventarioService {
     private final InventarioRepository inventarioRepository;
     private final MovimientoInventarioRepository movimientoRepository;
     private final InventarioKafkaProducer kafkaProducer;
+    private final ProductosClient productosClient;
 
     @Override
     @Transactional
-    public Inventario crearInventario(InventarioRequest request) {
+    public Inventario crearInventario(String token,InventarioRequest request) {
         Inventario inventario = Inventario.builder()
                 .productoId(request.getProductoId())
                 .sku(request.getSku())
@@ -39,6 +41,7 @@ public class InventarioServiceImpl implements InventarioService {
                 .umbralMinimo(request.getUmbralMinimo())
                 .build();
 
+        productosClient.validarSkuExiste(token, request.getSku());
         Inventario guardado = inventarioRepository.save(inventario);
         registrarMovimiento(guardado, TipoMovimiento.INICIAL, request.getStockTotal(), "Registro inicial de stock");
         return guardado;
