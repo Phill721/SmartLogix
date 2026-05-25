@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class PedidoResponseDTO {
     private Long id;
     private Long usuarioId;
+    private Long carritoId;
     private String estado;
     private List<ItemPedidoDTO> items;
     private List<HistorialEstadoDTO> historial;

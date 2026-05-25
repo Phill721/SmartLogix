@@ -4,6 +4,7 @@ import com.smartlogix.pedidos.dto.*;
 import com.smartlogix.pedidos.entity.Carrito;
 import com.smartlogix.pedidos.entity.CarritoItem;
 import com.smartlogix.pedidos.exception.CarritoVacioException;
+import com.smartlogix.pedidos.integration.ProductoCatalogoClient;
 import com.smartlogix.pedidos.mapper.PedidoMapper;
 import com.smartlogix.pedidos.repository.CarritoRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class CarritoService {
 
     private final CarritoRepository carritoRepository;
     private final PedidoMapper mapper;
+    private final ProductoCatalogoClient productoCatalogoClient;
 
     public CarritoResponseDTO obtenerCarritoPorUsuario(Long usuarioId) {
         Carrito carrito = carritoRepository.findByUsuarioId(usuarioId)
@@ -29,8 +31,10 @@ public class CarritoService {
     }
 
     public CarritoResponseDTO agregarAlCarrito(Long usuarioId, AgregarAlCarritoRequestDTO request) {
+        productoCatalogoClient.validarSkuExistente(request.getSku());
+
         Carrito carrito = carritoRepository.findByUsuarioId(usuarioId)
-                .orElseGet(() -> crearCarritoNuevo(usuarioId));
+            .orElseGet(() -> crearCarritoNuevo(usuarioId));
 
         // Verificar si el producto ya está en el carrito
         boolean productoExiste = carrito.getItems().stream()
@@ -45,6 +49,7 @@ public class CarritoService {
             if (itemExistente != null) {
                 itemExistente.setCantidad(itemExistente.getCantidad() + request.getCantidad());
                 itemExistente.calcularSubtotal();
+                carrito.calcularTotal();
                 log.info("Cantidad actualizada para producto SKU: {} en carrito del usuario: {}", request.getSku(), usuarioId);
             }
         } else {

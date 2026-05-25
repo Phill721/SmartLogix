@@ -33,6 +33,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
+    @ExceptionHandler(ProductoNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleProductoNoEncontrado(ProductoNoEncontradoException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("error", "Producto no encontrado");
+        response.put("message", ex.getMessage());
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(CarritoNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> handleCarritoNoEncontrado(CarritoNoEncontradoException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("error", "Carrito no encontrado");
+        response.put("message", ex.getMessage());
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
     @ExceptionHandler(CircuitBreakerAbiertoException.class)
     public ResponseEntity<Map<String, Object>> handleCircuitBreakerAbierto(CircuitBreakerAbiertoException ex) {
         Map<String, Object> response = new HashMap<>();

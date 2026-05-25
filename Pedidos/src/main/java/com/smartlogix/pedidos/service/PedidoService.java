@@ -5,13 +5,10 @@ import com.smartlogix.pedidos.dto.PageResponse;
 import com.smartlogix.pedidos.dto.PedidoListaResponseDTO;
 import com.smartlogix.pedidos.dto.PedidoResponseDTO;
 import com.smartlogix.pedidos.entity.Carrito;
-import com.smartlogix.pedidos.entity.CarritoItem;
-import com.smartlogix.pedidos.entity.ItemPedido;
 import com.smartlogix.pedidos.entity.Pedido;
 import com.smartlogix.pedidos.event.PedidoCanceladoEvent;
 import com.smartlogix.pedidos.event.PedidoCreadoEvent;
 import com.smartlogix.pedidos.exception.*;
-// import com.smartlogix.pedidos.grpc.InventarioGrpcClient; // Temporalmente comentado
 import com.smartlogix.pedidos.kafka.PedidoKafkaProducer;
 import com.smartlogix.pedidos.mapper.PedidoMapper;
 import com.smartlogix.pedidos.model.EstadoPedido;
@@ -39,25 +36,25 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final CarritoRepository carritoRepository;
-    // private final InventarioGrpcClient inventarioGrpcClient; // Temporalmente comentado
     private final PedidoKafkaProducer kafkaProducer;
     private final PedidoMapper mapper;
 
-    @Retry(name = "inventario", fallbackMethod = "crearPedidoFallback")
-    @CircuitBreaker(name = "inventario", fallbackMethod = "crearPedidoFallback")
     public PedidoResponseDTO crearPedido(Long usuarioId, CrearPedidoRequestDTO request) {
         log.info("Iniciando creación de pedido para usuario: {}", usuarioId);
 
-        // Validar que no esté vacío
-        if (request.getItems() == null || request.getItems().isEmpty()) {
-            throw new IllegalArgumentException("El pedido debe tener al menos un producto");
+        Long carritoId = request.getCarritoId();
+        Carrito carrito = carritoRepository.findById(carritoId)
+            .orElseThrow(() -> new CarritoNoEncontradoException("Carrito no encontrado"));
+
+        if (!carrito.getUsuarioId().equals(usuarioId)) {
+            throw new IllegalArgumentException("No tienes permisos para usar este carrito");
         }
 
-        // Validar stock mediante gRPC
-        validarStockDisponible(request);
+        if (carrito.getItems() == null || carrito.getItems().isEmpty()) {
+            throw new CarritoVacioException("El carrito no tiene productos");
+        }
 
-        // Crear el pedido
-        Pedido pedido = mapper.toPedido(request);
+        Pedido pedido = mapper.toPedido(carrito);
         pedido.setUsuarioId(usuarioId);
         pedido.setEstado(EstadoPedido.PENDIENTE);
 
@@ -72,11 +69,6 @@ public class PedidoService {
 
         log.info("Pedido creado exitosamente. ID: {}, Usuario: {}", pedidoGuardado.getId(), usuarioId);
         return mapper.toPedidoResponseDTO(pedidoGuardado);
-    }
-
-    public PedidoResponseDTO crearPedidoFallback(Long usuarioId, CrearPedidoRequestDTO request, Exception ex) {
-        log.error("Error al crear pedido (Circuit Breaker activo): {}", ex.getMessage());
-        throw new CircuitBreakerAbiertoException("El servicio de inventario no está disponible. Intente más tarde.");
     }
 
     @Retry(name = "inventario", fallbackMethod = "confirmarPedidoFallback")
@@ -140,6 +132,8 @@ public class PedidoService {
         pedido.registrarCambioEstado(EstadoPedido.CANCELADO, "Cancelado por el usuario");
         Pedido pedidoActualizado = pedidoRepository.save(pedido);
 
+        limpiarCarritoAsociado(pedido);
+
         log.info("Pedido cancelado: {}", pedidoId);
         return mapper.toPedidoResponseDTO(pedidoActualizado);
     }
@@ -176,21 +170,22 @@ public class PedidoService {
 
     // Métodos privados
 
-    private void validarStockDisponible(CrearPedidoRequestDTO request) {
-        // TODO: Implementar validación de stock con gRPC
-        // for (var item : request.getItems()) {
-        //     boolean stockDisponible = inventarioGrpcClient.validarStockDisponible(item.getSku(), item.getCantidad());
-        //     if (!stockDisponible) {
-        //         throw new StockInsuficienteException("Stock insuficiente para SKU: " + item.getSku());
-        //     }
-        // }
-    }
-
     private void reservarStockEnInventario(Pedido pedido) {
         // TODO: Implementar reserva de stock con gRPC
         // for (ItemPedido item : pedido.getItems()) {
         //     inventarioGrpcClient.reservarStock(item.getSku(), item.getCantidad(), pedido.getId().toString());
         // }
+    }
+
+    private void limpiarCarritoAsociado(Pedido pedido) {
+        if (pedido.getCarritoId() == null) {
+            return;
+        }
+
+        carritoRepository.findById(pedido.getCarritoId()).ifPresent(carrito -> {
+            carrito.vaciar();
+            carritoRepository.save(carrito);
+        });
     }
 
     private void publicarPedidoCreado(Pedido pedido) {

@@ -25,6 +25,9 @@ public class Pedido {
     @Column(nullable = false)
     private Long usuarioId;
 
+    @Column(name = "carrito_id")
+    private Long carritoId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoPedido estado;

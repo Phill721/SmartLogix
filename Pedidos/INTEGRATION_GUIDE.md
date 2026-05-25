@@ -34,7 +34,7 @@
 
 1. **Navegar al directorio del proyecto**:
 ```bash
-cd d:\SmartLogix-2\Pedidos
+cd c:\Users\busto\Desktop\Proyectos\SmartLogix\Pedidos
 ```
 
 2. **Compilar archivos Proto (opcional, automático con Maven)**:
@@ -71,7 +71,7 @@ java -jar target/servicio-pedidos-0.0.1-SNAPSHOT.jar
 
 3. **Verificar que esté funcionando**:
 ```bash
-curl http://localhost:8082/actuator/health
+curl http://localhost:8087/actuator/health
 ```
 
 ## Integración con BFF
@@ -80,7 +80,7 @@ Cuando el BFF de usuarios-productos esté listo, agregar los siguientes endpoint
 
 ### En el BFF (application.properties):
 ```properties
-pedidos.url=http://localhost:8082
+pedidos.url=http://localhost:8087
 ```
 
 ### En ProductosBffController o nuevo CarritoBffController:
@@ -107,13 +107,13 @@ public ResponseEntity<PedidoResponseDTO> crearPedido(
 ### Flujo de Creación de Pedido
 
 1. **Cliente agrega items al carrito** vía `/api/carrito/agregar`
-2. **Cliente llama a crear pedido** vía `POST /api/pedidos`
-3. **PedidoService valida stock** con gRPC a Inventario
-4. **Si hay stock**, crea pedido en estado PENDIENTE y publica evento `pedido-creado`
+2. **Cliente llama a crear pedido** vía `POST /api/pedidos` enviando solo `{ "carritoId": 1 }`
+3. **PedidoService toma el carrito persistido** y crea el pedido como snapshot de sus items
+4. **Si el carrito pertenece al usuario y tiene productos**, crea pedido en estado PENDIENTE y publica evento `pedido-creado`
 5. **Cliente confirma pedido** vía `POST /api/pedidos/{id}/confirmar`
 6. **PedidoService reserva stock** vía gRPC a Inventario
 7. **Si reserva exitosa**, pedido pasa a CONFIRMADO y publica `stock-reservado`
-8. **Inventario confirma** la reserva y publica evento `stock-reservado`
+8. **El carrito permanece disponible** hasta que el pedido se cancele o llegue a su cierre operativo
 
 ### Flujo de Cancelación
 
@@ -121,7 +121,7 @@ public ResponseEntity<PedidoResponseDTO> crearPedido(
 2. **PedidoService publica evento** `pedido-cancelado`
 3. **Inventario escucha el evento** y libera el stock
 4. **Inventario publica** evento `stock-liberado`
-5. **Pedidos confirma** la cancelación (estado CANCELADO)
+5. **Pedidos confirma** la cancelación (estado CANCELADO) y vacía el carrito asociado
 
 ### Circuit Breaker
 
@@ -214,7 +214,7 @@ Respuesta esperada:
    - Kafka en `9092`
    - Inventario gRPC en `9090`
    - Usuarios en `8081`
-   - Pedidos en `8082`
+  - Pedidos en `8087`
 
 2. Crear el usuario de prueba con el JSON anterior.
 
@@ -227,7 +227,7 @@ Authorization: Bearer {token}
 
 5. Agregar productos al carrito:
 ```bash
-curl -X POST http://localhost:8082/api/carrito/agregar \
+curl -X POST http://localhost:8087/api/carrito/agregar \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -240,36 +240,29 @@ curl -X POST http://localhost:8082/api/carrito/agregar \
 
 6. Crear el pedido:
 ```bash
-curl -X POST http://localhost:8082/api/pedidos \
+curl -X POST http://localhost:8087/api/pedidos \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
-    "items": [
-      {
-        "sku": "PROD001",
-        "nombreProducto": "Laptop Dell",
-        "cantidad": 1,
-        "precioUnitario": 999.99
-      }
-    ]
+    "carritoId": 1
   }'
 ```
 
 7. Confirmar el pedido usando el `id` devuelto:
 ```bash
-curl -X POST http://localhost:8082/api/pedidos/1/confirmar \
+curl -X POST http://localhost:8087/api/pedidos/1/confirmar \
   -H "Authorization: Bearer {token}"
 ```
 
 8. Consultar el detalle o el listado del usuario:
 ```bash
-curl http://localhost:8082/api/pedidos/1 \
+curl http://localhost:8087/api/pedidos/1 \
   -H "Authorization: Bearer {token}"
 ```
 
 9. Si quieres probar el flujo inverso, cancelar el pedido:
 ```bash
-curl -X POST http://localhost:8082/api/pedidos/1/cancelar \
+curl -X POST http://localhost:8087/api/pedidos/1/cancelar \
   -H "Authorization: Bearer {token}"
 ```
 
@@ -285,7 +278,7 @@ curl -X POST http://localhost:8081/api/usuarios/login \
 
 ### Crear Pedido
 ```bash
-curl -X POST http://localhost:8082/api/pedidos \
+curl -X POST http://localhost:8087/api/pedidos \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -304,13 +297,13 @@ En este microservicio no existe un `PUT` para cambiar el estado del pedido. Los 
 
 #### Confirmar pedido
 ```bash
-curl -X POST http://localhost:8082/api/pedidos/{pedidoId}/confirmar \
+curl -X POST http://localhost:8087/api/pedidos/{pedidoId}/confirmar \
   -H "Authorization: Bearer {token}"
 ```
 
 #### Cancelar pedido
 ```bash
-curl -X POST http://localhost:8082/api/pedidos/{pedidoId}/cancelar \
+curl -X POST http://localhost:8087/api/pedidos/{pedidoId}/cancelar \
   -H "Authorization: Bearer {token}"
 ```
 
@@ -325,7 +318,7 @@ Pasos:
 El único `PUT` relevante en este microservicio es para cambiar la cantidad de un item del carrito:
 
 ```bash
-curl -X PUT "http://localhost:8082/api/carrito/items/{itemId}?cantidad=3" \
+curl -X PUT "http://localhost:8087/api/carrito/items/{itemId}?cantidad=3" \
   -H "Authorization: Bearer {token}"
 ```
 
