@@ -10,18 +10,29 @@ import java.util.stream.Collectors;
 @Component
 public class PedidoMapper {
 
-        public Pedido toPedido(Carrito carrito) {
-                Pedido pedido = Pedido.builder()
-                                .carritoId(carrito.getId())
-                                .build();
+    public Pedido toPedido(Carrito carrito) {
+        Pedido pedido = Pedido.builder()
+                .carritoId(carrito.getId())
+                .build();
 
-                pedido.setItems(carrito.getItems().stream()
+        pedido.setItems(carrito.getItems().stream()
                 .map(this::toItemPedido)
                 .peek(item -> item.setPedido(pedido))
                 .collect(Collectors.toList()));
 
         pedido.calcularTotal();
         return pedido;
+    }
+
+    public ItemPedido toItemPedido(CarritoItem item) {
+        ItemPedido pedidoItem = ItemPedido.builder()
+                .sku(item.getSku())
+                .nombreProducto(item.getNombreProducto())
+                .cantidad(item.getCantidad())
+                .precioUnitario(item.getPrecioUnitario())
+                .build();
+        pedidoItem.calcularSubtotal();
+        return pedidoItem;
     }
 
     public ItemPedido toItemPedido(ItemPedidoDTO dto) {
