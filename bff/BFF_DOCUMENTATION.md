@@ -194,7 +194,7 @@ Ejemplos rápidos (curl)
 ```bash
 curl -X POST http://localhost:8080/api/bff/usuarios/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"user","password":"pass"}'
+  -d '{"username":"user","contrasena":"pass"}'
 ```
 
 - Listar productos (con token):
@@ -211,13 +211,6 @@ curl -X GET http://localhost:8080/api/bff/productos/completo/ABC123 \
   -H 'Authorization: Bearer <TOKEN>'
 ```
 
-Recomendaciones y notas
------------------------
-
-- Seguridad: revisar `SecurityConfig` antes de desplegar en producción. Actualmente todas las peticiones están permitidas.
-- Timeouts/reintentos: los clients usan `RestClient` por defecto; para producción conviene configurar timeouts/retries y circuit breakers.
-- Logs y tracing: considerar propagar headers de tracing (X-Request-Id, traceparent) desde el BFF a los microservicios.
-
 Dónde mirar el código
 ---------------------
 
@@ -226,12 +219,3 @@ Dónde mirar el código
 - DTOs: [src/main/java/com/smartlogix/bff/dto/](src/main/java/com/smartlogix/bff/dto/)
 - Configuración: [src/main/resources/application.properties](src/main/resources/application.properties#L1)
 
-Si quieres, puedo:
-
-- Añadir ejemplos de request/response para cada DTO.
-- Generar un OpenAPI / swagger básico a partir de los controllers.
-- Añadir notas sobre tests o ejecutar la aplicación localmente.
-
----
-
-Archivo generado automáticamente por el asistente.

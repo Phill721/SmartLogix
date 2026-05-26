@@ -177,14 +177,6 @@ Ejemplo de respuesta `Inventario` (parcial):
 }
 ```
 
-Recomendaciones y notas
------------------------
-
-- Auditar movimientos: siempre registrar un `Movimiento` que describa quién y por qué se cambia stock.
-- Concurrencia: usar bloqueos optimistas/pesimistas o transacciones para evitar condiciones de carrera en cambios de stock.
-- Timeouts/retry: para llamadas a otros servicios, configure timeouts y reintentos/circuit-breaker.
-- Metrics/tracing: propagar headers de tracing (X-Request-Id, traceparent) y exportar métricas de latencia y errores.
-
 Dónde mirar el código
 ---------------------
 
@@ -194,13 +186,3 @@ Dónde mirar el código
 - Repositorios: [src/main/java](src/main/java/com/smartlogix/inventario/repository)
 - DTOs: [src/main/java/com/smartlogix/inventario/dto](src/main/java/com/smartlogix/inventario/dto)
 - Configuración: [src/main/resources/application.properties](src/main/resources/application.properties#L1)
-
-Si quieres, puedo:
-
-- Añadir ejemplos request/response para cada DTO.
-- Generar un OpenAPI / swagger básico a partir de los controllers.
-- Añadir notas sobre pruebas unitarias o integrar checks de concurrencia.
-
----
-
-Archivo generado automáticamente por el asistente.
