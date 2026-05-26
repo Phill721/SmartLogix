@@ -15,5 +15,7 @@ import lombok.Setter;
 @Builder
 public class CrearPedidoRequestDTO {
 
+    private Long carritoId;
+
     private List<CrearPedidoItemDTO> items;
 }
