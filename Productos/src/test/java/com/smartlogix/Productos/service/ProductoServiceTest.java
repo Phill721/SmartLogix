@@ -362,4 +362,182 @@ class ProductoServiceTest {
             assertEquals(2, pageable.getPageNumber());
             assertEquals(15, pageable.getPageSize());
     }
+
+    @Test
+    void deberiaCrearProductoConSkuUnico() {
+
+            ProductoRequestDTO dto = new ProductoRequestDTO();
+            dto.setSku("PROD-010");
+            dto.setNombre("Audifonos");
+            dto.setDescripcion("Audifonos bluetooth");
+            dto.setCategoria("Audio");
+            dto.setPrecio(BigDecimal.valueOf(29990));
+            dto.setImagenes(List.of("img1.jpg"));
+
+            when(repository.existsBySkuIgnoreCase("PROD-010"))
+                    .thenReturn(false);
+
+            when(repository.save(any(Producto.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            ProductoResponseDTO resultado = service.crearProducto(dto);
+
+            assertEquals("PROD-010", resultado.getSku());
+            assertEquals("Audifonos", resultado.getNombre());
+            assertEquals("Audio", resultado.getCategoria());
+
+            verify(repository).existsBySkuIgnoreCase("PROD-010");
+            verify(repository).save(any(Producto.class));
+    }
+
+    @Test
+    void deberiaLanzarExcepcionAlCrearConSkuDuplicado() {
+
+            ProductoRequestDTO dto = new ProductoRequestDTO();
+            dto.setSku("PROD-010");
+
+            when(repository.existsBySkuIgnoreCase("PROD-010"))
+                    .thenReturn(true);
+
+            assertThrows(
+                    SkuDuplicadoException.class,
+                    () -> service.crearProducto(dto));
+
+            verify(repository, never()).save(any(Producto.class));
+    }
+
+    @Test
+    void deberiaEliminarProductoExistente() {
+
+            Producto producto = new Producto();
+            producto.setSku("PROD-011");
+
+            when(repository.findBySkuIgnoreCase("PROD-011"))
+                    .thenReturn(Optional.of(producto));
+
+            assertDoesNotThrow(() -> service.eliminar("PROD-011"));
+
+            verify(repository).delete(producto);
+    }
+
+    @Test
+    void deberiaLanzarExcepcionAlEliminarSkuInexistente() {
+
+            when(repository.findBySkuIgnoreCase("PROD-999"))
+                    .thenReturn(Optional.empty());
+
+            assertThrows(
+                    ProductoNotFoundException.class,
+                    () -> service.eliminar("PROD-999"));
+
+            verify(repository, never()).delete(any(Producto.class));
+    }
+
+    @Test
+    void deberiaBuscarProductosPorNombre() {
+
+            Producto producto = new Producto();
+            producto.setSku("PROD-005");
+            producto.setNombre("Mouse Gamer");
+
+            Page<Producto> pagina = new PageImpl<>(List.of(producto));
+
+            when(repository.findByNombreContainingIgnoreCase(
+                            eq("mouse"),
+                            any(Pageable.class))).thenReturn(pagina);
+
+            Page<ProductoResponseDTO> resultado = service.buscarPorNombre(
+                            "mouse",
+                            0,
+                            20);
+
+            assertEquals(1, resultado.getTotalElements());
+            assertEquals("PROD-005", resultado.getContent().get(0).getSku());
+
+            verify(repository).findByNombreContainingIgnoreCase(
+                            eq("mouse"),
+                            any(Pageable.class));
+    }
+
+    @Test
+    void deberiaBuscarProductosPorPrecio() {
+
+            Producto producto = new Producto();
+            producto.setSku("PROD-007");
+            producto.setPrecio(BigDecimal.valueOf(15000));
+
+            Page<Producto> pagina = new PageImpl<>(List.of(producto));
+
+            when(repository.findByPrecioBetween(
+                            eq(BigDecimal.valueOf(10000)),
+                            eq(BigDecimal.valueOf(20000)),
+                            any(Pageable.class))).thenReturn(pagina);
+
+            Page<ProductoResponseDTO> resultado = service.buscarPorPrecio(
+                            BigDecimal.valueOf(10000),
+                            BigDecimal.valueOf(20000),
+                            0,
+                            20);
+
+            assertEquals(1, resultado.getTotalElements());
+            assertEquals(BigDecimal.valueOf(15000), resultado.getContent().get(0).getPrecio());
+
+            verify(repository).findByPrecioBetween(
+                            eq(BigDecimal.valueOf(10000)),
+                            eq(BigDecimal.valueOf(20000)),
+                            any(Pageable.class));
+    }
+
+    @Test
+    void deberiaActualizarSkuCuandoNoExisteDuplicado() {
+
+            Producto producto = new Producto();
+            producto.setSku("PROD-001");
+            producto.setNombre("Viejo");
+
+            ProductoRequestDTO dto = new ProductoRequestDTO();
+            dto.setSku("PROD-002");
+            dto.setNombre("Nuevo");
+            dto.setDescripcion("Descripcion");
+            dto.setCategoria("Hardware");
+            dto.setPrecio(BigDecimal.valueOf(25000));
+            dto.setImagenes(List.of("img.jpg"));
+
+            when(repository.findBySkuIgnoreCase("PROD-001"))
+                            .thenReturn(Optional.of(producto));
+            when(repository.existsBySkuIgnoreCase("PROD-002"))
+                            .thenReturn(false);
+            when(repository.save(any(Producto.class)))
+                            .thenAnswer(invocation -> invocation.getArgument(0));
+
+            ProductoResponseDTO resultado = service.actualizar("PROD-001", dto);
+
+            assertEquals("PROD-002", resultado.getSku());
+            assertEquals("Nuevo", resultado.getNombre());
+            verify(repository).save(any(Producto.class));
+    }
+
+    @Test
+    void crearProductoDebeInvalidarCache() throws Exception {
+
+            var metodo = ProductoService.class.getMethod(
+                            "crearProducto",
+                            ProductoRequestDTO.class);
+
+            assertTrue(
+                            metodo.isAnnotationPresent(
+                                            org.springframework.cache.annotation.CacheEvict.class));
+    }
+
+    @Test
+    void eliminarDebeInvalidarCache() throws Exception {
+
+            var metodo = ProductoService.class.getMethod(
+                            "eliminar",
+                            String.class);
+
+            assertTrue(
+                            metodo.isAnnotationPresent(
+                                            org.springframework.cache.annotation.CacheEvict.class));
+    }
 }
