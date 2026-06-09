@@ -29,7 +29,7 @@ public class ProductoService {
     @CacheEvict(value = {"productos", "producto"}, allEntries = true)
     public ProductoResponseDTO crearProducto(ProductoRequestDTO dto) {
 
-        if (repository.existsBySku(dto.getSku())) {
+        if (repository.existsBySkuIgnoreCase(dto.getSku())) {
             throw new SkuDuplicadoException("Ya existe un producto con ese SKU");
         }
 
@@ -50,7 +50,7 @@ public class ProductoService {
     @Cacheable(value = "producto", key = "#sku")
     public ProductoResponseDTO obtenerPorSku(String sku) {
 
-        Producto producto = repository.findBySku(sku)
+        Producto producto = repository.findBySkuIgnoreCase(sku)
                 .orElseThrow(() ->
                         new ProductoNotFoundException("Producto no encontrado")
                 );
@@ -98,13 +98,13 @@ public class ProductoService {
     @CacheEvict(value = {"productos", "producto"}, allEntries = true)
     public ProductoResponseDTO actualizar(String sku, ProductoRequestDTO dto) {
 
-        Producto producto = repository.findBySku(sku)
+        Producto producto = repository.findBySkuIgnoreCase(sku)
                 .orElseThrow(() ->
                         new ProductoNotFoundException("Producto no encontrado")
                 );
 
         if (!producto.getSku().equals(dto.getSku())
-                && repository.existsBySku(dto.getSku())) {
+                && repository.existsBySkuIgnoreCase(dto.getSku())) {
 
             throw new SkuDuplicadoException(
                     "Ya existe un producto con ese SKU"
@@ -124,7 +124,7 @@ public class ProductoService {
     @CacheEvict(value = {"productos", "producto"}, allEntries = true)
     public void eliminar(String sku) {
 
-        Producto producto = repository.findBySku(sku)
+        Producto producto = repository.findBySkuIgnoreCase(sku)
                 .orElseThrow(() ->
                         new ProductoNotFoundException("Producto no encontrado")
                 );
