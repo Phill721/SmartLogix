@@ -14,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import com.smartlogix.usuarios.repository.UsuarioRepository;
+import com.smartlogix.usuarios.service.AuditService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -22,6 +24,12 @@ class JwtFilterTest {
 
     @Mock
     private JwtUtil jwtUtil;
+
+    @Mock
+    private AuditService auditService;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @Mock
     private FilterChain filterChain;
@@ -33,7 +41,7 @@ class JwtFilterTest {
 
     @Test
     void doFilterInternal_sinAuthorizationDebeContinuarSinAutenticar() throws Exception {
-        JwtFilter filter = new JwtFilter(jwtUtil);
+        JwtFilter filter = new JwtFilter(jwtUtil, auditService, usuarioRepository);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -45,12 +53,12 @@ class JwtFilterTest {
 
     @Test
     void doFilterInternal_conTokenInvalidoNoDebeAutenticar() throws Exception {
-        JwtFilter filter = new JwtFilter(jwtUtil);
+        JwtFilter filter = new JwtFilter(jwtUtil, auditService, usuarioRepository);
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Authorization", "Bearer bad-token");
+        request.addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.invalid.signature");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtUtil.validarToken("bad-token")).thenReturn(false);
+        when(jwtUtil.validarToken("eyJhbGciOiJIUzI1NiJ9.invalid.signature")).thenReturn(false);
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -60,16 +68,16 @@ class JwtFilterTest {
 
     @Test
     void doFilterInternal_conTokenValidoDebeConfigurarAutenticacionConRolYPermisos() throws Exception {
-        JwtFilter filter = new JwtFilter(jwtUtil);
+        JwtFilter filter = new JwtFilter(jwtUtil, auditService, usuarioRepository);
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Authorization", "Bearer token-ok");
+        request.addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.payload.signature");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtUtil.validarToken("token-ok")).thenReturn(true);
-        when(jwtUtil.extraerNombre("token-ok")).thenReturn("juan");
-        when(jwtUtil.extraerRol("token-ok")).thenReturn("ADMINISTRADOR");
-        when(jwtUtil.extraerPermiso("token-ok")).thenReturn("ADMINISTRACION");
-        when(jwtUtil.extraerPermisos("token-ok")).thenReturn(java.util.List.of("ADMINISTRACION", "VENTAS"));
+        when(jwtUtil.validarToken("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn(true);
+        when(jwtUtil.extraerNombre("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn("juan");
+        when(jwtUtil.extraerRol("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn("ADMINISTRADOR");
+        when(jwtUtil.extraerPermiso("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn("ADMINISTRACION");
+        when(jwtUtil.extraerPermisos("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn(java.util.List.of("ADMINISTRACION", "VENTAS"));
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -83,16 +91,16 @@ class JwtFilterTest {
 
     @Test
     void doFilterInternal_conPermisoUnicoDebeAplicarFallback() throws Exception {
-        JwtFilter filter = new JwtFilter(jwtUtil);
+        JwtFilter filter = new JwtFilter(jwtUtil, auditService, usuarioRepository);
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Authorization", "Bearer token-fallback");
+        request.addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.payload.signature");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtUtil.validarToken("token-fallback")).thenReturn(true);
-        when(jwtUtil.extraerNombre("token-fallback")).thenReturn("ana");
-        when(jwtUtil.extraerRol("token-fallback")).thenReturn("USUARIO");
-        when(jwtUtil.extraerPermiso("token-fallback")).thenReturn("VISTA_TIENDA");
-        when(jwtUtil.extraerPermisos("token-fallback")).thenReturn(java.util.List.of());
+        when(jwtUtil.validarToken("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn(true);
+        when(jwtUtil.extraerNombre("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn("ana");
+        when(jwtUtil.extraerRol("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn("USUARIO");
+        when(jwtUtil.extraerPermiso("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn("VISTA_TIENDA");
+        when(jwtUtil.extraerPermisos("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn(java.util.List.of());
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -102,16 +110,16 @@ class JwtFilterTest {
 
     @Test
     void doFilterInternal_siYaHayAutenticacionNoDebeSobrescribir() throws Exception {
-        JwtFilter filter = new JwtFilter(jwtUtil);
+        JwtFilter filter = new JwtFilter(jwtUtil, auditService, usuarioRepository);
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken("existente", null, java.util.List.of())
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Authorization", "Bearer token-ok");
+        request.addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.payload.signature");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        when(jwtUtil.validarToken("token-ok")).thenReturn(true);
+        when(jwtUtil.validarToken("eyJhbGciOiJIUzI1NiJ9.payload.signature")).thenReturn(true);
 
         filter.doFilterInternal(request, response, filterChain);
 
