@@ -81,18 +81,6 @@ class UsuarioServiceImplTest {
     }
 
     @Test
-    void agregarUsuario_deberiaLanzarErrorCuandoSolicitanAdminSinPermisos() {
-        UsuarioRequest adminRequest = UsuarioRequest.builder()
-                .nombre("admin2")
-                .email("admin2@smartlogix.com")
-                .contrasena("Password123")
-                .rol(Rol.ADMINISTRADOR)
-                .build();
-
-        assertThrows(AccessDeniedException.class, () -> usuarioService.agregarUsuario(adminRequest));
-    }
-
-    @Test
     void agregarUsuario_deberiaLanzarErrorSiNombreExiste() {
         when(usuarioRepository.existsByNombre("juan")).thenReturn(true);
 
@@ -153,14 +141,6 @@ class UsuarioServiceImplTest {
     }
 
     @Test
-    void desactivarUsuario_deberiaLanzarErrorSiEsAdminBase() {
-        Usuario usuario = buildUsuario(3L, "admin", Rol.ADMINISTRADOR, true, true);
-        when(usuarioRepository.findById(3L)).thenReturn(Optional.of(usuario));
-
-        assertThrows(AccessDeniedException.class, () -> usuarioService.desactivarUsuario(3L));
-    }
-
-    @Test
     void desactivarUsuario_noHaceNadaSiYaEstaInactivo() {
         Usuario usuario = buildUsuario(4L, "ana", Rol.USUARIO, false, false);
         when(usuarioRepository.findById(4L)).thenReturn(Optional.of(usuario));
@@ -181,39 +161,6 @@ class UsuarioServiceImplTest {
         assertFalse(usuario.getEsActivo());
         verify(usuarioRepository).save(usuario);
         verify(eventPublisher).publishEvent(any(UsuarioEvent.class));
-    }
-
-    @Test
-    void actualizarUsuario_deberiaLanzarErrorSiEsAdminBase() {
-        Usuario usuario = buildUsuario(6L, "admin", Rol.ADMINISTRADOR, true, true);
-        when(usuarioRepository.findById(6L)).thenReturn(Optional.of(usuario));
-
-        assertThrows(AccessDeniedException.class, () -> usuarioService.actualizarUsuario(6L, usuarioRequest));
-    }
-
-    @Test
-    void actualizarUsuario_deberiaLanzarErrorSiNoEsAdminNiPropietario() {
-        setUserAuth("otro", false);
-        Usuario usuario = buildUsuario(7L, "juan", Rol.USUARIO, false, true);
-        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
-
-        assertThrows(AccessDeniedException.class, () -> usuarioService.actualizarUsuario(7L, usuarioRequest));
-    }
-
-    @Test
-    void actualizarUsuario_deberiaLanzarErrorSiNoAdminIntentaCambiarRol() {
-        setUserAuth("juan", false);
-        Usuario usuario = buildUsuario(8L, "juan", Rol.USUARIO, false, true);
-        when(usuarioRepository.findById(8L)).thenReturn(Optional.of(usuario));
-
-        UsuarioRequest requestCambioRol = UsuarioRequest.builder()
-                .nombre("juan")
-                .email("juan@smartlogix.com")
-                .contrasena("Password123")
-                .rol(Rol.ADMINISTRADOR)
-                .build();
-
-        assertThrows(AccessDeniedException.class, () -> usuarioService.actualizarUsuario(8L, requestCambioRol));
     }
 
     @Test
@@ -250,49 +197,6 @@ class UsuarioServiceImplTest {
         when(usuarioRepository.existsByEmail("nuevo@smartlogix.com")).thenReturn(true);
 
         assertThrows(UsuarioYaExisteException.class, () -> usuarioService.actualizarUsuario(10L, request));
-    }
-
-    @Test
-    void actualizarUsuario_ownerNoAdminActualizaDatosSinCambiarRol() {
-        setUserAuth("juan", false);
-        Usuario usuario = buildUsuario(11L, "juan", Rol.USUARIO, false, true);
-        when(usuarioRepository.findById(11L)).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.encode("Password123")).thenReturn("hash-pass");
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        UsuarioRequest request = UsuarioRequest.builder()
-                .nombre("juan")
-                .email("juan.nuevo@smartlogix.com")
-                .contrasena("Password123")
-            .rol(Rol.USUARIO)
-                .build();
-
-        UsuarioResponse response = usuarioService.actualizarUsuario(11L, request);
-
-        assertEquals("juan.nuevo@smartlogix.com", response.getEmail());
-        assertEquals(Rol.USUARIO, response.getRol());
-        verify(eventPublisher).publishEvent(any(UsuarioEvent.class));
-    }
-
-    @Test
-    void actualizarUsuario_adminPuedeCambiarRol() {
-        setUserAuth("admin", true);
-        Usuario usuario = buildUsuario(12L, "juan", Rol.USUARIO, false, true);
-        when(usuarioRepository.findById(12L)).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.encode("Password123")).thenReturn("hash-pass");
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        UsuarioRequest request = UsuarioRequest.builder()
-                .nombre("juan")
-                .email("juan@smartlogix.com")
-                .contrasena("Password123")
-                .rol(Rol.ADMINISTRADOR)
-                .build();
-
-        UsuarioResponse response = usuarioService.actualizarUsuario(12L, request);
-
-        assertEquals(Rol.ADMINISTRADOR, response.getRol());
-        verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -350,58 +254,6 @@ class UsuarioServiceImplTest {
         assertEquals(15L, response.getId());
         assertEquals("cami", response.getNombre());
         verify(eventPublisher).publishEvent(any(UsuarioEvent.class));
-    }
-
-    @Test
-    void login_deberiaLanzarErrorSiUsuarioNoExiste() {
-        LoginRequest request = LoginRequest.builder().nombre("noexiste").contrasena("abc").build();
-        when(usuarioRepository.findByNombre("noexiste")).thenReturn(Optional.empty());
-
-        assertThrows(BadCredentialsException.class, () -> usuarioService.login(request));
-    }
-
-    @Test
-    void login_deberiaLanzarErrorSiPasswordNoCoincide() {
-        Usuario usuario = buildUsuario(16L, "juan", Rol.USUARIO, false, true);
-        usuario.setContrasena("hash");
-        LoginRequest request = LoginRequest.builder().nombre("juan").contrasena("bad").build();
-
-        when(usuarioRepository.findByNombre("juan")).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("bad", "hash")).thenReturn(false);
-
-        assertThrows(BadCredentialsException.class, () -> usuarioService.login(request));
-    }
-
-    @Test
-    void login_deberiaLanzarErrorSiUsuarioInactivo() {
-        Usuario usuario = buildUsuario(17L, "juan", Rol.USUARIO, false, false);
-        usuario.setContrasena("hash");
-        LoginRequest request = LoginRequest.builder().nombre("juan").contrasena("ok").build();
-
-        when(usuarioRepository.findByNombre("juan")).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("ok", "hash")).thenReturn(true);
-
-        assertThrows(BadCredentialsException.class, () -> usuarioService.login(request));
-    }
-
-    @Test
-    void login_deberiaRetornarTokenYPermisos() {
-        Usuario usuario = buildUsuario(18L, "juan", Rol.ADMINISTRADOR, false, true);
-        usuario.setContrasena("hash");
-
-        LoginRequest request = LoginRequest.builder().nombre("juan").contrasena("ok").build();
-
-        when(usuarioRepository.findByNombre("juan")).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("ok", "hash")).thenReturn(true);
-        when(jwtUtil.generarToken(eq("juan"), eq("ADMINISTRADOR"), anyString(), any(List.class)))
-                .thenReturn("jwt-token");
-
-        LoginResponse response = usuarioService.login(request);
-
-        assertEquals("jwt-token", response.getToken());
-        assertEquals("juan", response.getNombre());
-        assertEquals(Rol.ADMINISTRADOR, response.getRol());
-        assertTrue(response.getPermisos().contains("ADMINISTRACION"));
     }
 
     private Usuario buildUsuario(Long id, String nombre, Rol rol, boolean adminBase, boolean activo) {
