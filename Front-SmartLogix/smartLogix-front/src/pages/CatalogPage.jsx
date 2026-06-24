@@ -1,44 +1,70 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/catalog/ProductCard';
-import { useProducts } from '../hooks/useProducts'; // <-- 1. IMPORTAMOS EL HOOK
 
 export default function CatalogPage() {
   const { categoryName } = useParams();
-  const { getProductsByCategory } = useProducts(); // <-- 2. EXTRAEMOS LA FUNCIÓN
+  const { getProductsByCategory } = useProducts();
+  const [orden, setOrden] = useState('destacados');
 
-  const filteredProducts = getProductsByCategory(categoryName);
+  const productos = getProductsByCategory(categoryName || 'tecnologia');
+
+  // Ordenador matemático
+  const productosOrdenados = [...productos].sort((a, b) => {
+    const pA = a.precio !== undefined ? a.precio : (a.price || 0);
+    const pB = b.precio !== undefined ? b.precio : (b.price || 0);
+    if (orden === 'menor') return pA - pB;
+    if (orden === 'mayor') return pB - pA;
+    return 0;
+  });
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-10 px-4 md:px-8">
-        <h1 className="text-3xl font-bold uppercase tracking-wider text-slate-900">
-          {categoryName || 'Catálogo'}
-        </h1>
-        
-        <div className="relative">
-          <select className="bg-white border-2 border-slate-900 text-slate-900 px-5 py-2 pr-10 text-sm font-medium focus:outline-none rounded-full min-w-[240px] appearance-none cursor-pointer">
-            <option value="">Ordenar por</option>
-            <option value="asc">Precio: Menor a Mayor</option>
-            <option value="desc">Precio: Mayor a Menor</option>
+    <div className="w-full max-w-7xl mx-auto">
+      
+      {/* =========================================================================
+         ENCABEZADO REPARADO: 'flex-col sm:flex-row' apila los elementos en celular
+         ========================================================================= */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b-2 border-black/10">
+        <div>
+          <span className="text-xs font-mono text-slate-400 uppercase tracking-widest block mb-1">
+            Catálogo de inventario
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 uppercase tracking-wider">
+            {categoryName}
+          </h1>
+        </div>
+
+        {/* Filtro de ordenamiento sin desborde horizontal */}
+        <div className="flex items-center gap-2 self-stretch sm:self-auto">
+          <span className="text-xs font-bold text-slate-500 uppercase whitespace-nowrap">
+            Ordenar:
+          </span>
+          <select
+            value={orden}
+            onChange={(e) => setOrden(e.target.value)}
+            className="bg-white border-2 border-black rounded-xl px-3 py-2 text-xs font-extrabold shadow-sm outline-none cursor-pointer flex-1 sm:flex-initial"
+          >
+            <option value="destacados">Destacados</option>
+            <option value="menor">Menor Precio</option>
+            <option value="mayor">Mayor Precio</option>
           </select>
-          <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-900">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
-          </div>
         </div>
       </div>
 
-      {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8 px-4 md:px-8 pb-12">
-          {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+      {/* GRILLA DE PRODUCTOS */}
+      {productosOrdenados.length === 0 ? (
+        <div className="text-center py-20 text-slate-400 font-bold">
+          No se encontraron productos en la categoría "{categoryName}".
         </div>
       ) : (
-        <div className="text-center text-slate-500 mt-20 px-4 flex flex-col items-center">
-            No hay productos en esta categoría.
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {productosOrdenados.map((prod) => (
+            <ProductCard key={prod.id} product={prod} />
+          ))}
         </div>
       )}
+
     </div>
   );
 }

@@ -10,11 +10,11 @@ export default function CartPage() {
   if (cart.length === 0) {
     return (
       <div className="w-full min-h-[50vh] flex flex-col items-center justify-center text-center px-4">
-        <img 
-            src="/public/gato.gif"
-            alt="Carrito vacío" 
-            className="max-w-full max-h-full object-contain opacity-80 hover:opacity-100 hover:scale-105 transition-all duration-300" 
-          />
+        <img
+          src="/public/gato.gif"
+          alt="Carrito vacío"
+          className="max-w-full max-h-full object-contain opacity-80 hover:opacity-100 hover:scale-105 transition-all duration-300"
+        />
         <h2 className="text-2xl font-black text-slate-950 mb-2">Tu carrito está vacío</h2>
         <p className="text-slate-500 text-sm mb-8">
           No registras órdenes ni productos listos para despacho en el módulo de SmartLogix.
@@ -37,7 +37,7 @@ export default function CartPage() {
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-8 items-start">
-        
+
         <div className="bg-white border-2 border-black rounded-3xl p-4 md:p-6 shadow-xl space-y-4">
           {cart.map((item) => {
             const titulo = item.nombre || item.name;
@@ -45,11 +45,11 @@ export default function CartPage() {
             const imagen = item.imagenes?.[0] || item.image;
 
             return (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="flex items-center gap-4 py-4 border-b border-slate-100 last:border-0"
               >
-                <div 
+                <div
                   onClick={() => navigate(`/producto/${item.id}`)}
                   className="w-20 h-20 bg-[#EBEFF2] border-2 border-black rounded-xl p-1 flex items-center justify-center shrink-0 cursor-pointer"
                 >
@@ -57,7 +57,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3 
+                  <h3
                     onClick={() => navigate(`/producto/${item.id}`)}
                     className="text-sm font-bold text-slate-900 truncate cursor-pointer hover:text-[#1E3859] transition-colors"
                   >
@@ -68,7 +68,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex items-center border-2 border-black rounded-full bg-[#EBEFF2] overflow-hidden shrink-0">
-                  <button 
+                  <button
                     onClick={() => updateQuantity(item.id, -1)}
                     className="px-3 py-1 font-black text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                   >
@@ -77,7 +77,7 @@ export default function CartPage() {
                   <span className="px-2 font-mono text-xs font-bold text-slate-900 min-w-[24px] text-center">
                     {item.quantity}
                   </span>
-                  <button 
+                  <button
                     onClick={() => updateQuantity(item.id, 1)}
                     className="px-3 py-1 font-black text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                   >
@@ -85,7 +85,7 @@ export default function CartPage() {
                   </button>
                 </div>
 
-                <button 
+                <button
                   onClick={() => removeProduct(item.id)}
                   className="text-slate-400 hover:text-red-600 p-2 transition-colors cursor-pointer text-lg"
                   title="Eliminar producto"
@@ -97,7 +97,7 @@ export default function CartPage() {
           })}
 
           <div className="pt-4 border-t border-slate-100 flex justify-end">
-            <button 
+            <button
               onClick={clearCart}
               className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
             >
@@ -136,7 +136,7 @@ export default function CartPage() {
           </div>
 
           <button
-            onClick={() => alert("HU-FE-ORD-02: Procesando orden en la arquitectura de microservicios...")}
+            onClick={() => navigate('/checkout')} 
             style={{ backgroundColor: theme.primary }}
             className="w-full text-white py-4 rounded-full border-2 border-black font-extrabold text-base shadow-md hover:opacity-95 transition-all active:scale-[0.99] cursor-pointer"
           >
