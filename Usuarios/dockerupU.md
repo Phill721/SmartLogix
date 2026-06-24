@@ -25,5 +25,5 @@ phpmyadmin/phpmyadmin
 
 docker run -d --name usuarios `
  --network smartlogix-net `
- -p 8081:8080 `
+ -p 8081:8081 `
  sl-usuarios

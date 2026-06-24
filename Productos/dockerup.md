@@ -25,5 +25,5 @@ phpmyadmin/phpmyadmin
 
 docker run -d --name productos `
  --network smartlogix-net `
- -p 8084:8080 `
+ -p 8084:8084 `
  sl-productos
