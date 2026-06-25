@@ -8,13 +8,19 @@ docker run -d `
 -v productos_data:/var/lib/mysql `
 mysql:8
 
+# Levantar Redis
+docker run --name redis-productos `
+--network smartlogix-net `
+-p 6379:6379 `
+redis
+
 # Levantar PhpMyAdmin
 
 docker run -d `
 --name phpmyadmin-productos `
 --network smartlogix-net `
 -e PMA_HOST=slbd-productos `
--p 9094:80 `
+-p 9084:80 `
 phpmyadmin/phpmyadmin
 
 # Crear imagen de micro

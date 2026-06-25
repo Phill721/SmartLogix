@@ -27,3 +27,9 @@ docker run -d --name usuarios `
  --network smartlogix-net `
  -p 8081:8081 `
  sl-usuarios
+
+# Login en JSON
+{
+  "nombre": "admin",
+  "contrasena": "Admin123*"
+}
