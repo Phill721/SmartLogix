@@ -1,0 +1,258 @@
+version: "3.9"
+
+networks:
+  smartlogix-net:
+    driver: bridge
+
+volumes:
+  usuarios_data:
+  productos_data:
+  pedidos_data:
+  inventario_data:
+
+services:
+
+  # =========================
+  # 🟡 BASES DE DATOS
+  # =========================
+
+  slbd-usuarios:
+    image: mysql:8
+    container_name: slbd-usuarios
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: smartlogix_usuarios
+    ports:
+      - "3306:3306"
+    volumes:
+      - usuarios_data:/var/lib/mysql
+    networks:
+      - smartlogix-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  slbd-productos:
+    image: mysql:8
+    container_name: slbd-productos
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: smartlogix_productos
+    ports:
+      - "3307:3306"
+    volumes:
+      - productos_data:/var/lib/mysql
+    networks:
+      - smartlogix-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  slbd-pedidos:
+    image: mysql:8
+    container_name: slbd-pedidos
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: smartlogix_pedidos
+    ports:
+      - "3308:3306"
+    volumes:
+      - pedidos_data:/var/lib/mysql
+    networks:
+      - smartlogix-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  slbd-inventario:
+    image: mysql:8
+    container_name: slbd-inventario
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: smartlogix_inventario
+    ports:
+      - "3309:3306"
+    volumes:
+      - inventario_data:/var/lib/mysql
+    networks:
+      - smartlogix-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # =========================
+  # 🔵 INFRA COMPARTIDA
+  # =========================
+
+  redis:
+    image: redis
+    container_name: redis-productos
+    ports:
+      - "6379:6379"
+    networks:
+      - smartlogix-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - smartlogix-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - smartlogix-net
+
+  # =========================
+  # 🟣 PHPMYADMIN
+  # =========================
+
+  phpmyadmin-usuarios:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-usuarios
+    environment:
+      PMA_HOST: slbd-usuarios
+    ports:
+      - "9091:80"
+    networks:
+      - smartlogix-net
+    depends_on:
+      - slbd-usuarios
+
+  phpmyadmin-productos:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-productos
+    environment:
+      PMA_HOST: slbd-productos
+    ports:
+      - "9084:80"
+    networks:
+      - smartlogix-net
+    depends_on:
+      - slbd-productos
+
+  phpmyadmin-pedidos:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-pedidos
+    environment:
+      PMA_HOST: slbd-pedidos
+    ports:
+      - "9087:80"
+    networks:
+      - smartlogix-net
+    depends_on:
+      - slbd-pedidos
+
+  phpmyadmin-inventario:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-inventario
+    environment:
+      PMA_HOST: slbd-inventario
+    ports:
+      - "9083:80"
+    networks:
+      - smartlogix-net
+    depends_on:
+      - slbd-inventario
+
+  # =========================
+  # 🟢 MICROSERVICIOS
+  # =========================
+
+  usuarios:
+    build:
+      context: ./Usuarios
+    container_name: usuarios
+    ports:
+      - "8081:8081"
+    networks:
+      - smartlogix-net
+    depends_on:
+      slbd-usuarios:
+        condition: service_healthy
+
+  productos:
+    build:
+      context: ./Productos
+    container_name: productos
+    ports:
+      - "8084:8084"
+    networks:
+      - smartlogix-net
+    depends_on:
+      slbd-productos:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  pedidos:
+    build:
+      context: ./Pedidos
+    container_name: pedidos
+    ports:
+      - "8087:8087"
+    networks:
+      - smartlogix-net
+    depends_on:
+      slbd-pedidos:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  inventario:
+    build:
+      context: ./Inventario
+    container_name: inventario
+    ports:
+      - "8083:8083"
+    networks:
+      - smartlogix-net
+    depends_on:
+      slbd-inventario:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  # =========================
+  # 🧠 BFF
+  # =========================
+
+  bff:
+    build:
+      context: ./bff
+    container_name: bff
+    ports:
+      - "8080:8080"
+    networks:
+      - smartlogix-net
+    depends_on:
+      - usuarios
+      - productos
+      - inventario
+      - pedidos
