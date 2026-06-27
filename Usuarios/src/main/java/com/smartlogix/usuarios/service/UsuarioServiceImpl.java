@@ -280,13 +280,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        Usuario usuario = usuarioRepository.findByNombre(request.getNombre())
+        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     auditService.registrarIntentoFallido(
-                        request.getNombre(),
+                        request.getEmail(),
                         TipoEvento.USUARIO_NO_ENCONTRADO,
                         EstadoIntento.FALLIDO,
-                        "Intento de login con usuario inexistente",
+                        "Intento de login con correo electrónico inexistente",
                         null,
                         null
                     );
@@ -297,7 +297,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         loginAttemptService.desbloquearAutomaticamente(usuario);
         if (loginAttemptService.estaBloqueadoTemporalmente(usuario)) {
             auditService.registrarIntentoFallido(
-                request.getNombre(),
+                request.getEmail(),
                 TipoEvento.LOGIN_FALLIDO,
                 EstadoIntento.BLOQUEADO,
                 "Intento de login con cuenta bloqueada temporalmente por intentos fallidos",
@@ -309,7 +309,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         if (Boolean.FALSE.equals(usuario.getEsActivo())) {
             auditService.registrarIntentoFallido(
-                request.getNombre(),
+                request.getEmail(),
                 TipoEvento.LOGIN_FALLIDO,
                 EstadoIntento.BLOQUEADO,
                 "Intento de login con usuario desactivado",
@@ -322,7 +322,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasena())) {
             loginAttemptService.registrarIntentoFallido(usuario, "Contraseña incorrecta");
             auditService.registrarIntentoFallido(
-                request.getNombre(),
+                request.getEmail(),
                 TipoEvento.LOGIN_FALLIDO,
                 EstadoIntento.FALLIDO,
                 "Intento de login con contraseña incorrecta (Intentos: " + (usuario.getIntentosFallidos() + 1) + "/3)",

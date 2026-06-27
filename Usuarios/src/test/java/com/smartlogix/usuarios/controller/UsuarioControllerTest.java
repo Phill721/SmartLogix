@@ -1,9 +1,22 @@
 package com.smartlogix.usuarios.controller;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.smartlogix.usuarios.dto.LoginRequest;
 import com.smartlogix.usuarios.dto.LoginResponse;
@@ -12,18 +25,6 @@ import com.smartlogix.usuarios.dto.UsuarioRequest;
 import com.smartlogix.usuarios.dto.UsuarioResponse;
 import com.smartlogix.usuarios.model.Rol;
 import com.smartlogix.usuarios.service.UsuarioService;
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioControllerTest {
@@ -59,7 +60,7 @@ class UsuarioControllerTest {
 
     @Test
     void login_deberiaRetornar200() {
-        LoginRequest request = LoginRequest.builder().nombre("juan").contrasena("123").build();
+        LoginRequest request = LoginRequest.builder().email("juan@correo.com").contrasena("123").build();
         LoginResponse loginResponse = LoginResponse.builder().token("jwt").nombre("juan").rol(Rol.USUARIO).build();
 
         when(usuarioService.login(request)).thenReturn(loginResponse);
