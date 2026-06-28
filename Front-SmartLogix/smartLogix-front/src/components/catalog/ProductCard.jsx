@@ -14,7 +14,7 @@ export default function ProductCard({ product }) {
 
   return (
     <div 
-      onClick={() => navigate(`/producto/${product.id}`)}
+      onClick={() => navigate(`/producto/${product.sku}`)}
       className="border-2 border-black rounded-2xl p-4 flex flex-col items-center bg-[#EBEFF2] aspect-square relative transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer group"
     >
       <div className="w-full flex-1 min-h-0 bg-white rounded-2xl mb-3 overflow-hidden border border-slate-200 flex items-center justify-center p-2">
