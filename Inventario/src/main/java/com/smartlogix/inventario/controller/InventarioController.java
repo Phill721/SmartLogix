@@ -40,7 +40,7 @@ public class InventarioController {
     }
 
     @PostMapping("/{id}/ajuste")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
     public ResponseEntity<Inventario> ajusteManual(@PathVariable Long id,
             @Valid @RequestBody AjusteRequest request) {
         return ResponseEntity.ok(service.ajusteManual(id, request));

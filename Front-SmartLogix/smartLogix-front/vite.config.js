@@ -14,12 +14,7 @@ export default defineConfig({
           proxy.on('error', (err, _req, _res) => {
             console.log('❌ ERROR EN PROXY DE VITE:', err);
           });
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('↗️ Enviando petición al BFF:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('⬅️ Respuesta del BFF:', proxyRes.statusCode, req.url);
-          });
+          
         },
       }
     }
