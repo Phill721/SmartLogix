@@ -7,7 +7,6 @@ export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const { addProduct } = useCart();
 
-  // Aseguramos que tomamos el valor correcto del DTO que viene del BFF
   const stock = product.stockTotal !== undefined ? product.stockTotal : (product.stock || 0);
   const isOutOfStock = stock <= 0;
 
@@ -18,37 +17,52 @@ export default function ProductCard({ product }) {
   return (
     <div 
       onClick={() => navigate(`/producto/${product.sku}`)}
-      className="border-2 border-black rounded-2xl p-4 flex flex-col items-center bg-[#EBEFF2] aspect-square relative transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer group"
+      className="bg-white border border-slate-200/80 rounded-3xl p-4 flex flex-col items-center drop-shadow-[0_15px_25px_rgba(30,56,89,0.12)] transition-all duration-300 hover:-translate-y-1.5 hover:drop-shadow-[0_22px_35px_rgba(30,56,89,0.22)] hover:border-slate-300 cursor-pointer group select-none relative h-full justify-between"
     >
-      <div className="w-full flex-1 min-h-0 bg-white rounded-2xl mb-3 overflow-hidden border border-slate-200 flex items-center justify-center p-2">
+      
+      {/* Contenedor Superior de Imagen (Blanco limpio) */}
+      <div className="w-full h-44 bg-slate-50/70 rounded-2xl mb-3 overflow-hidden border border-slate-100 flex items-center justify-center p-3 relative shrink-0">
         <img
           src={imagen}
           alt={titulo}
-          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+          className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
         />
+        {isOutOfStock && (
+          <span className="absolute top-2.5 right-2.5 bg-rose-500 text-white font-mono text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+            Agotado
+          </span>
+        )}
       </div>
 
-      <div className="w-full text-center flex flex-col justify-end">
-        <span className="text-[10px] text-slate-400 font-mono mb-1">SKU: {product.sku} | STOCK: {stock}</span>
-        <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-tight mb-2 group-hover:text-[#1E3859] transition-colors">
-          {titulo}
-        </h3>
-        <span className="text-lg font-bold text-slate-900 mb-3">
+      {/* Información Central */}
+      <div className="w-full text-center flex flex-col flex-1 justify-between px-1 my-1">
+        <div>
+          <span className="text-[10px] text-slate-400 font-mono tracking-tight block mb-1">
+            SKU: {product.sku} <span className="text-slate-300">|</span> <span className={stock > 0 ? "text-emerald-600 font-bold" : "text-rose-500"}>STOCK: {stock}</span>
+          </span>
+          <h3 className="text-xs font-bold text-slate-800 line-clamp-2 leading-snug group-hover:text-[#1E3859] transition-colors">
+            {titulo}
+          </h3>
+        </div>
+        
+        <span className="text-base font-black text-[#1E3859] font-mono mt-2.5 block">
           ${Number(precio).toLocaleString('es-CL')}
         </span>
       </div>
 
+      {/* Botón Inferior Estilo Pill (Sin bordes negros de historieta) */}
       <button
         disabled={isOutOfStock}
         onClick={(e) => {
           e.stopPropagation();
           addProduct(product);
         }}
-        style={{ backgroundColor: isOutOfStock ? '#64748b' : theme.primary }}
-        className="w-[85%] text-white py-1.5 rounded-full border border-black text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mt-auto shrink-0 z-10 cursor-pointer"
+        style={{ backgroundColor: isOutOfStock ? '#cbd5e1' : theme.primary }}
+        className="w-full text-white py-2.5 rounded-full text-xs font-bold transition-all hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed mt-3 shrink-0 shadow-md shadow-[#1E3859]/15"
       >
-        {isOutOfStock ? 'Producto Agotado' : 'Agregar al carrito'}
+        {isOutOfStock ? 'Sin existencias' : 'Agregar al carrito'}
       </button>
+
     </div>
   );
 }

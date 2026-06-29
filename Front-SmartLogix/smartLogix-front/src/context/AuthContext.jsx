@@ -12,32 +12,22 @@ export function AuthProvider({ children }) {
     return !!localStorage.getItem('smartlogix_token');
   });
 
-  // CONECTADO ESTRICTAMENTE A TU POSTMAN EXITOSO (llaves: email, contrasena)
   const login = async (emailInput, contrasenaInput) => {
     try {
       const response = await fetch('/api/bff/usuarios/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // CAMBIO QUIRÚRGICO: Enviamos exactamente la llave "email" que exige Java
-        body: JSON.stringify({ 
-          email: emailInput, 
-          contrasena: contrasenaInput 
-        }), 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInput, contrasena: contrasenaInput }), 
       });
 
-      if (!response.ok) {
-        throw new Error('Credenciales rechazadas por el servidor de identidad.');
-      }
+      if (!response.ok) throw new Error('Credenciales rechazadas por la bodega central.');
 
-      const data = await response.json(); // Recibe tu LoginResponseDTO
-
+      const data = await response.json();
       const usuarioFormateado = {
         nombre: data.nombre,
-        email: emailInput, // Lo guardamos aquí para que tu UI pueda mostrarlo
-        rol: data.rol, // "ADMINISTRADOR" | "VENDEDOR" | "USUARIO"
-        permisos: data.permisos || [data.permiso].filter(Boolean),
+        email: emailInput,
+        rol: data.rol,
+        permisos: data.permisos || [],
       };
 
       localStorage.setItem('smartlogix_token', data.token);
@@ -52,6 +42,31 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const register = async (nombre, email, password) => {
+    try {
+      const response = await fetch('/api/bff/usuarios/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          nombre: nombre,
+          email: email, 
+          contrasena: password,
+          rol: 'USUARIO' // <-- SOLUCIÓN AL ERROR: Java exige este dato
+        }), 
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Rechazo del servidor (${response.status})`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Register Error:', error.message);
+      throw error;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('smartlogix_token');
     localStorage.removeItem('smartlogix_user');
@@ -60,7 +75,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

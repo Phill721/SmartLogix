@@ -25,79 +25,86 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(nombre, email, password);
-      navigate('/perfil');
+      alert("✅ Cuenta creada con éxito. Ahora puedes iniciar sesión.");
+      navigate('/login'); 
     } catch (err) {
-      setError('Error al registrar el usuario en el nodo central.');
+      setError(err.message || 'Error al comunicar con el nodo central.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-12">
-      <div className="bg-white border-2 border-black rounded-3xl p-8 shadow-2xl">
-        <h2 className="text-2xl font-black text-slate-900 mb-1 text-center">Crear Cuenta</h2>
-        <p className="text-xs text-slate-500 mb-6 text-center font-mono">Alta de nuevo operador en SmartLogix</p>
+    <div className="w-full max-w-md mx-auto px-4 py-16 select-none font-sans">
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-200/50">
+        
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Crear Cuenta</h2>
+          <p className="text-xs text-slate-400 mt-1 font-mono">Registro de operador SmartLogix</p>
+        </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl text-xs font-bold mb-4">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-2xl text-xs font-medium mb-6">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Completo</label>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 font-mono">Nombre Completo</label>
             <input
               type="text"
               required
               placeholder="Ej: Matías Astudillo"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="w-full bg-[#EBEFF2]/50 border-2 border-slate-300 focus:border-[#1E3859] rounded-xl px-4 py-3 text-sm font-medium outline-none"
+              className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#1E3859] rounded-xl px-4 py-3 text-xs font-medium outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Correo Institucional</label>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 font-mono">Correo Institucional</label>
             <input
               type="email"
               required
               placeholder="matias@smartlogix.cl"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#EBEFF2]/50 border-2 border-slate-300 focus:border-[#1E3859] rounded-xl px-4 py-3 text-sm font-medium outline-none"
+              className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#1E3859] rounded-xl px-4 py-3 text-xs font-medium outline-none transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Contraseña de acceso</label>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 font-mono">Contraseña</label>
             <input
               type="password"
               required
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#EBEFF2]/50 border-2 border-slate-300 focus:border-[#1E3859] rounded-xl px-4 py-3 text-sm font-medium outline-none"
+              className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#1E3859] rounded-xl px-4 py-3 text-xs font-medium outline-none transition-all"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ backgroundColor: theme.primary }}
-            className="w-full text-white py-3.5 rounded-xl border-2 border-black font-extrabold text-sm shadow-md hover:opacity-95 transition-all cursor-pointer mt-4"
-          >
-            {loading ? 'Emitiendo certificado...' : 'Registrar en Base de Datos'}
-          </button>
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ backgroundColor: loading ? '#94a3b8' : theme.primary }}
+              className="w-full text-white py-3.5 rounded-xl font-bold text-xs tracking-wide uppercase shadow-sm hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer"
+            >
+              {loading ? 'Procesando...' : 'Registrar'}
+            </button>
+          </div>
         </form>
 
-        <p className="text-center text-xs text-slate-500 mt-6 pt-6 border-t border-slate-100">
-          ¿Ya posees credenciales?{' '}
+        <p className="text-center text-xs text-slate-500 mt-8 pt-6 border-t border-slate-100">
+          ¿Ya tienes cuenta?{' '}
           <Link to="/login" className="font-bold text-[#1E3859] hover:underline">
-            Ingresar aquí
+            Ingresar
           </Link>
         </p>
+
       </div>
     </div>
   );

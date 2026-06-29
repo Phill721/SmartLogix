@@ -49,12 +49,11 @@ export default function Layout() {
             </Link>
           )}
 
-          {/* Buscador PC */}
           <form onSubmit={handleBuscar} className="relative w-64 hidden sm:block">
             <input
               type="text"
               value={termino}
-              onChange={(e) => setTermino(e.target.value)}
+              onChange={(e) => setTermino(e.value)}
               placeholder="Buscar..."
               className="w-full bg-black/15 text-white placeholder-slate-300 px-4 py-1 rounded-full border-2 border-slate-300 focus:outline-none focus:border-white text-sm outline-none"
             />
@@ -91,13 +90,11 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Desplegable Móvil */}
       {isMenuOpen && (
         <div style={{ backgroundColor: theme.primary, borderColor: theme.borderDark }} className="md:hidden border-b-4 text-white px-6 py-4 flex flex-col space-y-3 font-bold text-base shadow-xl">
           <form onSubmit={handleBuscar} className="sm:hidden pb-2 border-b border-white/10 mb-1">
             <input type="text" value={termino} onChange={(e) => setTermino(e.target.value)} placeholder="Buscar..." className="w-full bg-black/10 text-white placeholder-slate-300 px-4 py-1.5 rounded-full border border-slate-300 text-sm outline-none" />
           </form>
-
           <Link to="/categoria/tecnologia" onClick={() => setIsMenuOpen(false)}>Tecnologia</Link>
           <Link to="/categoria/hardware" onClick={() => setIsMenuOpen(false)}>Hardware</Link>
           <Link to="/categoria/perifericos" onClick={() => setIsMenuOpen(false)}>Perifericos</Link>
@@ -114,7 +111,6 @@ export default function Layout() {
           SmartLogix© {new Date().getFullYear()}
         </span>
       </footer>
-
     </div>
   );
 }

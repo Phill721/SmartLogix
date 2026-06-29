@@ -40,7 +40,6 @@ export function ProductProvider({ children }) {
     return products.find(p => (p.sku || '').toLowerCase() === (skuConsultado || '').toLowerCase());
   };
 
-  // NUEVA FUNCIÓN: Sincroniza el ajuste de stock con el BFF
   const actualizarStock = async (sku, cantidadTotal) => {
     const token = localStorage.getItem('smartlogix_token');
     const response = await fetch(`/api/bff/inventario/${sku}`, {
@@ -53,9 +52,13 @@ export function ProductProvider({ children }) {
     });
 
     if (!response.ok) throw new Error("Falló la sincronización de inventario");
-    
-    // Recargamos todo para asegurar consistencia tras el PUT
     await cargarProductos();
+  };
+
+  // Normaliza el array de imágenes: filtra vacíos y garantiza al menos el placeholder
+  const normalizarImagenes = (imagenes) => {
+    const limpias = (imagenes || []).map(u => u?.trim()).filter(Boolean);
+    return limpias.length > 0 ? limpias : ['https://placehold.co/600x400?text=SmartLogix'];
   };
 
   const crearNuevoProducto = async (form) => {
@@ -68,23 +71,45 @@ export function ProductProvider({ children }) {
       nombre: form.nombre,
       precio: parseFloat(form.precio) || 0,
       categoria: form.categoria.toLowerCase(),
-      imagenes: [form.imagenUrl || "https://placehold.co/600x400?text=SmartLogix"]
+      descripcion: form.descripcion || '',
+      imagenes: normalizarImagenes(form.imagenes)
     };
 
     const resProd = await fetch('/api/bff/productos', { method: 'POST', headers, body: JSON.stringify(dtoProducto) });
-    if (!resProd.ok) throw new Error("Error en catálogo");
+    if (!resProd.ok) {
+      const txt = await resProd.text();
+      throw new Error(`[${resProd.status}] ${txt || 'Error en catálogo'}`);
+    }
 
     const cantidadNumerica = parseInt(form.stock, 10);
-    const dtoInventario = { sku: skuLimpio, cantidad: cantidadNumerica, bodegaId: 1 };
+    const dtoInventario = { 
+      sku: skuLimpio, 
+      stockTotal: cantidadNumerica, 
+      umbralMinimo: 0, 
+      bodegaId: 1 
+    };
 
-    await fetch('/api/bff/inventario', { method: 'POST', headers, body: JSON.stringify(dtoInventario) });
+    const resInv = await fetch('/api/bff/inventario', { method: 'POST', headers, body: JSON.stringify(dtoInventario) });
+    if (!resInv.ok) {
+      const txt = await resInv.text();
+      throw new Error(`[${resInv.status}] ${txt || 'Error en inventario'}`);
+    }
+
     await cargarProductos();
   };
 
   const actualizarProducto = async (sku, form) => {
     const token = localStorage.getItem('smartlogix_token');
     const skuLimpio = sku.toUpperCase().trim();
-    const dtoEdicion = { sku: skuLimpio, nombre: form.nombre, precio: parseFloat(form.precio) || 0, categoria: form.categoria.toLowerCase() };
+
+    const dtoEdicion = {
+      sku: skuLimpio,
+      nombre: form.nombre,
+      precio: parseFloat(form.precio) || 0,
+      categoria: form.categoria.toLowerCase(),
+      descripcion: form.descripcion || '',
+      imagenes: normalizarImagenes(form.imagenes)
+    };
 
     const response = await fetch(`/api/bff/productos/${skuLimpio}`, {
       method: 'PUT',
@@ -92,7 +117,11 @@ export function ProductProvider({ children }) {
       body: JSON.stringify(dtoEdicion)
     });
 
-    if (!response.ok) throw new Error("Error editando producto");
+    if (!response.ok) {
+      const txt = await response.text();
+      throw new Error(`[${response.status}] ${txt || 'Error editando producto'}`);
+    }
+
     await cargarProductos();
   };
 
