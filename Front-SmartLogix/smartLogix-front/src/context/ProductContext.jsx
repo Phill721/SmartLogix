@@ -40,25 +40,39 @@ export function ProductProvider({ children }) {
     return products.find(p => (p.sku || '').toLowerCase() === (skuConsultado || '').toLowerCase());
   };
 
-  const actualizarStock = async (sku, cantidadTotal) => {
+  const actualizarStock = async (sku, cantidadComprada) => {
     const token = localStorage.getItem('smartlogix_token');
-    const response = await fetch(`/api/bff/inventario/${sku}`, {
+    const skuLimpio = sku.toUpperCase().trim();
+
+    // 1. Consultar stock real desde inventario
+    const resInv = await fetch(`/api/bff/inventario/${skuLimpio}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!resInv.ok) throw new Error(`No se pudo consultar inventario de ${skuLimpio}`);
+    const inventario = await resInv.json();
+
+    const stockActual = inventario.stockTotal ?? 0;
+    const nuevoStock = Math.max(0, stockActual - cantidadComprada);
+
+    // 2. Actualizar con el stock meta correcto
+    const response = await fetch(`/api/bff/inventario/${skuLimpio}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ cantidad: cantidadTotal })
+      body: JSON.stringify({
+        cantidad: nuevoStock,
+        motivo: 'Venta online SmartLogix'
+      })
     });
 
-    if (!response.ok) throw new Error("Falló la sincronización de inventario");
-    await cargarProductos();
-  };
+    if (!response.ok) {
+      const txt = await response.text();
+      throw new Error(`Falló la sincronización de inventario: ${txt}`);
+    }
 
-  // Normaliza el array de imágenes: filtra vacíos y garantiza al menos el placeholder
-  const normalizarImagenes = (imagenes) => {
-    const limpias = (imagenes || []).map(u => u?.trim()).filter(Boolean);
-    return limpias.length > 0 ? limpias : ['https://placehold.co/600x400?text=SmartLogix'];
+    await cargarProductos();
   };
 
   const crearNuevoProducto = async (form) => {
@@ -66,13 +80,19 @@ export function ProductProvider({ children }) {
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
     const skuLimpio = form.sku.toUpperCase().trim();
 
+    const imagenesLimpias = (form.imagenes || [])
+      .map(u => u.trim())
+      .filter(u => u.length > 0);
+
     const dtoProducto = {
       sku: skuLimpio,
       nombre: form.nombre,
       precio: parseFloat(form.precio) || 0,
       categoria: form.categoria.toLowerCase(),
       descripcion: form.descripcion || '',
-      imagenes: normalizarImagenes(form.imagenes)
+      imagenes: imagenesLimpias.length > 0
+        ? imagenesLimpias
+        : ["https://placehold.co/600x400?text=SmartLogix"]
     };
 
     const resProd = await fetch('/api/bff/productos', { method: 'POST', headers, body: JSON.stringify(dtoProducto) });
@@ -82,11 +102,11 @@ export function ProductProvider({ children }) {
     }
 
     const cantidadNumerica = parseInt(form.stock, 10);
-    const dtoInventario = { 
-      sku: skuLimpio, 
-      stockTotal: cantidadNumerica, 
-      umbralMinimo: 0, 
-      bodegaId: 1 
+    const dtoInventario = {
+      sku: skuLimpio,
+      stockTotal: cantidadNumerica,
+      umbralMinimo: 0,
+      bodegaId: 1
     };
 
     const resInv = await fetch('/api/bff/inventario', { method: 'POST', headers, body: JSON.stringify(dtoInventario) });
@@ -102,13 +122,19 @@ export function ProductProvider({ children }) {
     const token = localStorage.getItem('smartlogix_token');
     const skuLimpio = sku.toUpperCase().trim();
 
+    const imagenesLimpias = (form.imagenes || [])
+      .map(u => u.trim())
+      .filter(u => u.length > 0);
+
     const dtoEdicion = {
       sku: skuLimpio,
       nombre: form.nombre,
       precio: parseFloat(form.precio) || 0,
       categoria: form.categoria.toLowerCase(),
       descripcion: form.descripcion || '',
-      imagenes: normalizarImagenes(form.imagenes)
+      imagenes: imagenesLimpias.length > 0
+        ? imagenesLimpias
+        : ["https://placehold.co/600x400?text=SmartLogix"]
     };
 
     const response = await fetch(`/api/bff/productos/${skuLimpio}`, {
@@ -133,11 +159,11 @@ export function ProductProvider({ children }) {
   };
 
   return (
-    <ProductContext.Provider value={{ 
-      products, loading, error, 
-      getProductsByCategory, getProductBySku, 
+    <ProductContext.Provider value={{
+      products, loading, error,
+      getProductsByCategory, getProductBySku,
       crearNuevoProducto, actualizarProducto, eliminarProducto, actualizarStock,
-      loadProducts: cargarProductos 
+      loadProducts: cargarProductos
     }}>
       {children}
     </ProductContext.Provider>

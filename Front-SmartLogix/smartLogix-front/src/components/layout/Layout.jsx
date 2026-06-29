@@ -53,7 +53,7 @@ export default function Layout() {
             <input
               type="text"
               value={termino}
-              onChange={(e) => setTermino(e.value)}
+              onChange={(e) => setTermino(e.target.value)}
               placeholder="Buscar..."
               className="w-full bg-black/15 text-white placeholder-slate-300 px-4 py-1 rounded-full border-2 border-slate-300 focus:outline-none focus:border-white text-sm outline-none"
             />
