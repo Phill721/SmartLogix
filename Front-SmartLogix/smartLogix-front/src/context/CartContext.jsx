@@ -21,11 +21,10 @@ export function CartProvider({ children }) {
     temporizadorRef.current = setTimeout(() => setNotificacion(null), 3000);
   };
 
-  // ADAPTADO AL AGREGARALCARRITOREQUESTDTO DE TU MICROSERVICIO DE PEDIDOS
   const addProduct = (productoBackend) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.sku === productoBackend.sku);
-      const techoStock = productoBackend.stock !== undefined ? productoBackend.stock : 20;
+      const techoStock = productoBackend.stockTotal !== undefined ? productoBackend.stockTotal : (productoBackend.stock || 0);
 
       if (existingItem) {
         if (existingItem.cantidad + 1 > techoStock) {
@@ -39,6 +38,11 @@ export function CartProvider({ children }) {
             ? { ...item, cantidad: item.cantidad + 1 }
             : item
         );
+      }
+
+      if (techoStock <= 0) {
+        mostrarNotificacion('error', 'Sin Stock', 'Producto no disponible en bodega.');
+        return prevCart;
       }
 
       mostrarNotificacion('success', '¡Agregado al carrito!', productoBackend.nombre || productoBackend.name);
@@ -60,8 +64,7 @@ export function CartProvider({ children }) {
     setCart((prevCart) => prevCart.filter((item) => item.sku !== sku));
   };
 
-  // ACTUALIZAR CANTIDAD CON CANDADO DE STOCK FÍSICO
-  const updateQuantity = (sku, amount, maxStock = 20) => {
+  const updateQuantity = (sku, amount, maxStock) => {
     setCart((prevCart) =>
       prevCart.map((item) => {
         if (item.sku === sku) {
@@ -89,7 +92,6 @@ export function CartProvider({ children }) {
     <CartContext.Provider value={{ cart, addProduct, removeProduct, updateQuantity, clearCart, cartCount, cartTotal }}>
       {children}
 
-      {/* TOAST NOTIFICATION */}
       {notificacion && (
         <div className="fixed bottom-6 right-6 left-6 sm:left-auto sm:w-86 z-[9999] animate-fade-in">
           <div className={`border-2 border-black rounded-2xl p-4 bg-white text-slate-900 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 ${

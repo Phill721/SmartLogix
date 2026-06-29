@@ -23,122 +23,87 @@ import com.smartlogix.bff.dto.ProductoResponseDTO;
 @RequestMapping("/api/bff/productos")
 public class ProductosBffController {
 
-    private final ProductosClient productosClient;
-    private final InventarioClient inventarioClient;
+        private final ProductosClient productosClient;
+        private final InventarioClient inventarioClient;
 
-    public ProductosBffController(
-            ProductosClient productosClient,
-            InventarioClient inventarioClient
-    ) {
-        this.productosClient = productosClient;
-        this.inventarioClient = inventarioClient;
-    }
+        public ProductosBffController(
+                        ProductosClient productosClient,
+                        InventarioClient inventarioClient) {
+                this.productosClient = productosClient;
+                this.inventarioClient = inventarioClient;
+        }
 
-    @GetMapping
-    public PageResponseDTO<ProductoResponseDTO> listar(
-            @RequestHeader("Authorization") String token,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+        @GetMapping
+        public PageResponseDTO<ProductoResponseDTO> listar(
+                        @RequestHeader(value = "Authorization", required = false) String token, // <--- LIBERADO AL
+                                                                                                // PÚBLICO
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size) {
+                return productosClient.listarProductos(token, page, size);
+        }
 
-        return productosClient.listarProductos(
-                token,
-                page,
-                size
-        );
-    }
+        @GetMapping("/{sku}")
+        public ProductoResponseDTO obtener(
+                        @RequestHeader(value = "Authorization", required = false) String token, // <--- LIBERADO AL
+                                                                                                // PÚBLICO
+                        @PathVariable String sku) {
+                return productosClient.obtenerPorSku(token, sku);
+        }
 
-    @GetMapping("/{sku}")
-    public ProductoResponseDTO obtener(
-                @RequestHeader("Authorization") String token,
-            @PathVariable String sku
-    ) {
+        @PostMapping
+        public ProductoResponseDTO crear(
+                        @RequestHeader("Authorization") String token, // <--- PRIVADO (Se mantiene estricto)
+                        @RequestBody ProductoRequestDTO dto) {
+                return productosClient.crearProducto(token, dto);
+        }
 
-        return productosClient.obtenerPorSku(token, sku);
-    }
+        @GetMapping("/buscar/nombre")
+        public PageResponseDTO<ProductoResponseDTO> buscarPorNombre(
+                        @RequestHeader(value = "Authorization", required = false) String token, // <--- LIBERADO AL
+                                                                                                // PÚBLICO
+                        @RequestParam String nombre,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size) {
+                return productosClient.buscarPorNombre(token, nombre, page, size);
+        }
 
-    @PostMapping
-    public ProductoResponseDTO crear(
-            @RequestHeader("Authorization") String token,
-            @RequestBody ProductoRequestDTO dto
-    ) {
+        @PutMapping("/{sku}")
+        public ProductoResponseDTO actualizar(
+                        @RequestHeader("Authorization") String token, // <--- PRIVADO
+                        @PathVariable String sku,
+                        @RequestBody ProductoRequestDTO dto) {
+                return productosClient.actualizarProducto(token, sku, dto);
+        }
 
-        return productosClient.crearProducto(
-                token,
-                dto
-        );
-    }
+        @DeleteMapping("/{sku}")
+        public void eliminar(
+                        @RequestHeader("Authorization") String token, // <--- PRIVADO
+                        @PathVariable String sku) {
+                productosClient.eliminarProducto(token, sku);
+        }
 
-    @GetMapping("/buscar/nombre")
-    public PageResponseDTO<ProductoResponseDTO> buscarPorNombre(
-                @RequestHeader("Authorization") String token,
-            @RequestParam String nombre,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
+        @GetMapping("/buscar/categoria")
+        public PageResponseDTO<ProductoResponseDTO> listarPorCategoria(
+                        @RequestHeader(value = "Authorization", required = false) String token, // <--- LIBERADO AL
+                                                                                                // PÚBLICO
+                        @RequestParam String categoria,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size) {
+                return productosClient.listarPorCategoria(token, categoria, page, size);
+        }
 
-        return productosClient.buscarPorNombre(
-                token,
-                nombre,
-                page,
-                size
-        );
-    }
+        @GetMapping("/completo/{sku}")
+        public ProductoCompletoDTO obtenerCompleto(
+                        @PathVariable String sku,
+                        @RequestHeader(value = "Authorization", required = false) String token // <--- LIBERADO AL
+                                                                                               // PÚBLICO
+        ) {
+                ProductoResponseDTO producto = productosClient.obtenerPorSku(token, sku);
+                InventarioDTO inventario = inventarioClient.obtenerPorSku(token, sku);
 
-     @PutMapping("/{sku}")
-    public ProductoResponseDTO actualizar(
-            @RequestHeader("Authorization") String token,
-            @PathVariable String sku,
-            @RequestBody ProductoRequestDTO dto
-    ) {
-
-        return productosClient.actualizarProducto(
-                token,
-                sku,
-                dto
-        );
-    }
-
-    @DeleteMapping("/{sku}")
-    public void eliminar(
-            @RequestHeader("Authorization") String token,
-            @PathVariable String sku
-    ) {
-
-        productosClient.eliminarProducto(token, sku);
-    }
-
-     @GetMapping("/buscar/categoria")
-    public PageResponseDTO<ProductoResponseDTO> listarPorCategoria(
-            @RequestHeader("Authorization") String token,
-            @RequestParam String categoria,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-
-        return productosClient.listarPorCategoria(
-                token,
-                categoria,
-                page,
-                size
-        );
-    }
-
-    @GetMapping("/completo/{sku}")
-    public ProductoCompletoDTO obtenerCompleto(
-            @PathVariable String sku,
-             @RequestHeader("Authorization") String token
-    ) {
-
-        ProductoResponseDTO producto
-                = productosClient.obtenerPorSku(token, sku);
-
-        InventarioDTO inventario
-                = inventarioClient.obtenerPorSku(token, sku);
-
-        return ProductoCompletoDTO.builder()
-                .producto(producto)
-                .inventario(inventario)
-                .build();
-    }
+                return ProductoCompletoDTO.builder()
+                                .producto(producto)
+                                .inventario(inventario)
+                                .build();
+        }
 }

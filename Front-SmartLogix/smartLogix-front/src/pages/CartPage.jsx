@@ -42,55 +42,47 @@ export default function CartPage() {
 
         <div className="bg-white border-2 border-black rounded-3xl p-4 md:p-6 shadow-xl space-y-4">
           {cart.map((item) => {
-            // 🛡️ EL PUENTE: Consultamos la memoria viva de Spring Boot
+            // 🛡️ Buscamos el producto en el contexto actualizado por el BFF
             const dataMySQL = (getProductBySku && getProductBySku(item.sku)) || {};
 
-            const titulo = dataMySQL.nombre || item.nombreProducto || item.nombre || "Mouse HyperX Pulsefire Haste";
+            const titulo = dataMySQL.nombre || item.nombreProducto || "Producto sin nombre";
             const precio = dataMySQL.precio !== undefined ? dataMySQL.precio : (item.precioUnitario || 0);
             const imagen = dataMySQL.imagenes?.[0] || item.imagenUrl || "/public/gato.gif";
-            const stockMaximo = dataMySQL.stock !== undefined ? dataMySQL.stock : 20;
+            
+            // 🚀 LÍMITE REAL: Usamos stockTotal del DTO que configuramos en el BFF
+            const stockMaximo = dataMySQL.stockTotal !== undefined ? dataMySQL.stockTotal : 0;
 
             return (
-              <div
-                key={item.sku || Math.random()}
-                className="flex items-center gap-4 py-4 border-b border-slate-100 last:border-0"
-              >
+              <div key={item.sku} className="flex items-center gap-4 py-4 border-b border-slate-100 last:border-0">
                 <div
                   onClick={() => navigate(`/producto/${item.sku}`)}
                   className="w-20 h-20 bg-[#EBEFF2] border-2 border-black rounded-xl p-1.5 flex items-center justify-center shrink-0 cursor-pointer"
                 >
-                  <img src={imagen} alt={titulo} className="max-h-full max-w-full object-contain drop-shadow" />
+                  <img src={imagen} alt={titulo} className="max-h-full max-w-full object-contain" />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3
-                    onClick={() => navigate(`/producto/${item.sku}`)}
-                    className="text-sm font-black text-slate-900 truncate cursor-pointer hover:text-[#1E3859] transition-colors"
-                  >
-                    {titulo}
-                  </h3>
-                  <span className="text-[11px] font-mono text-slate-400 block mb-0.5">SKU: {item.sku}</span>
+                  <h3 className="text-sm font-black text-slate-900 truncate">{titulo}</h3>
+                  <span className="text-[11px] font-mono text-slate-400 block">SKU: {item.sku}</span>
                   <span className="text-sm font-mono font-black text-[#1E3859]">
-                    ${Number(precio).toLocaleString('es-CL')} <span className="text-[10px] font-normal text-slate-400">c/u</span>
+                    ${Number(precio).toLocaleString('es-CL')}
                   </span>
                 </div>
 
-                {/* CONTADOR BLINDADO CONTRA EL STOCK FÍSICO */}
-                <div className="flex items-center border-2 border-black rounded-full bg-[#EBEFF2] overflow-hidden shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                {/* CONTADOR BLINDADO CONTRA STOCK MÁXIMO */}
+                <div className="flex items-center border-2 border-black rounded-full bg-[#EBEFF2] overflow-hidden shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
                   <button
-                    onClick={() => updateQuantity(item.sku, -1, stockMaximo)}
-                    className="px-3 py-1 font-black text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer font-mono"
-                  >
-                    -
-                  </button>
+                    onClick={() => updateQuantity(item.sku, -1)}
+                    className="px-3 py-1 font-black text-slate-700 hover:bg-slate-300 cursor-pointer"
+                  >-</button>
                   <span className="px-2 font-mono text-xs font-black text-slate-900 min-w-[24px] text-center">
                     {item.cantidad}
                   </span>
                   <button
                     disabled={item.cantidad >= stockMaximo}
-                    onClick={() => updateQuantity(item.sku, 1, stockMaximo)}
-                    className="px-3 py-1 font-black text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer font-mono disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                    title={item.cantidad >= stockMaximo ? "Tope de bodega alcanzado" : "Sumar unidad"}
+                    onClick={() => updateQuantity(item.sku, 1)}
+                    className="px-3 py-1 font-black text-slate-700 hover:bg-slate-300 disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                    title={item.cantidad >= stockMaximo ? "Stock máximo alcanzado" : "Sumar"}
                   >
                     +
                   </button>
@@ -98,11 +90,8 @@ export default function CartPage() {
 
                 <button
                   onClick={() => removeProduct(item.sku)}
-                  className="text-slate-400 hover:text-red-600 p-2 transition-colors cursor-pointer text-lg active:scale-90"
-                  title="Eliminar producto"
-                >
-                  🗑️
-                </button>
+                  className="text-slate-400 hover:text-red-600 p-2 cursor-pointer"
+                >🗑️</button>
               </div>
             );
           })}
@@ -110,54 +99,28 @@ export default function CartPage() {
           <div className="pt-4 border-t-2 border-dashed border-slate-100 flex justify-end">
             <button
               onClick={clearCart}
-              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-black rounded-xl font-mono text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer flex items-center gap-2 group"
-              title="Borrar todos los elementos del Kardex temporal"
+              className="px-4 py-2 bg-rose-50 text-rose-700 border-2 border-black rounded-xl font-mono text-xs font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer"
             >
-              <span className="text-sm group-hover:animate-bounce">🗑️</span>
-              <span>Vaciar Orden de Compra</span>
+              Vaciar Orden
             </button>
           </div>
         </div>
 
-        {/* COLUMNA RESUMEN DESPACHO */}
-        <div className="bg-white border-2 border-black rounded-3xl p-6 shadow-xl flex flex-col justify-between">
-          <div>
-            <h2 className="text-lg font-black text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b-2 border-black font-mono">
-              Resumen Despacho
-            </h2>
-
-            <div className="space-y-3 text-xs font-bold text-slate-600 font-mono">
-              <div className="flex justify-between">
-                <span>Subtotal ({cartCount} ítems)</span>
-                <span className="text-slate-900">${cartTotal.toLocaleString('es-CL')}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Logística de Envío</span>
-                <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-400 uppercase">
-                  Bodega Central : Gratis
-                </span>
-              </div>
-            </div>
-
-            <hr className="border-slate-200 my-4" />
-
-            <div className="flex justify-between items-baseline mb-6">
-              <span className="text-sm font-black text-slate-900 uppercase">Total A Pagar</span>
-              <span className="text-3xl font-mono font-black text-[#1E3859]">
-                ${cartTotal.toLocaleString('es-CL')}
-              </span>
-            </div>
+        {/* RESUMEN */}
+        <div className="bg-white border-2 border-black rounded-3xl p-6 shadow-xl">
+          <h2 className="text-lg font-black uppercase mb-4 pb-2 border-b-2 border-black">Resumen</h2>
+          <div className="flex justify-between mb-6 font-mono font-bold">
+            <span>Total:</span>
+            <span className="text-2xl text-[#1E3859]">${cartTotal.toLocaleString('es-CL')}</span>
           </div>
-
           <button
             onClick={() => navigate('/checkout')} 
             style={{ backgroundColor: theme.primary }}
-            className="w-full text-white py-4 rounded-xl border-2 border-black font-black text-xs uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+            className="w-full text-white py-4 rounded-xl border-2 border-black font-black text-xs uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] cursor-pointer"
           >
-            Emitir Orden gRPC Despacho →
+            Emitir Orden gRPC →
           </button>
         </div>
-
       </div>
     </div>
   );

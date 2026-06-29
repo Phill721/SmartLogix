@@ -21,7 +21,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: grupo-inventario
       auto-offset-reset: earliest
@@ -32,6 +32,12 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: 1
+      retries: 1
+      properties:
+        linger.ms: 100
+        delivery.timeout.ms: 5000
+        request.timeout.ms: 3000
 
 resilience4j:
   circuitbreaker:

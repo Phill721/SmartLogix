@@ -21,9 +21,15 @@ public class InventarioKafkaProducer {
         mensaje.put("sku", inventario.getSku());
         mensaje.put("stockActual", inventario.getStockDisponible());
         mensaje.put("umbral", inventario.getUmbralMinimo());
-        
-        kafkaTemplate.send("stock-bajo", inventario.getSku(), mensaje);
-        log.info("Alerta de stock bajo enviada para SKU: {}", inventario.getSku());
+
+        kafkaTemplate.send("stock-bajo", inventario.getSku(), mensaje)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.warn("Error al enviar alerta de stock bajo para SKU: {}", inventario.getSku(), ex);
+                    } else {
+                        log.info("Alerta de stock bajo enviada para SKU: {}", inventario.getSku());
+                    }
+                });
     }
 
     public void enviarEventoActualizacion(Inventario inventario) {
@@ -31,7 +37,12 @@ public class InventarioKafkaProducer {
         mensaje.put("sku", inventario.getSku());
         mensaje.put("stockDisponible", inventario.getStockDisponible());
         mensaje.put("stockReservado", inventario.getStockReservado());
-        
-        kafkaTemplate.send("inventario-actualizado", inventario.getSku(), mensaje);
+
+        kafkaTemplate.send("inventario-actualizado", inventario.getSku(), mensaje)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.warn("Error al enviar evento de actualización para SKU: {}", inventario.getSku(), ex);
+                    }
+                });
     }
 }

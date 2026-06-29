@@ -6,7 +6,10 @@ import { useCart } from '../../context/CartContext';
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const { addProduct } = useCart();
-  const isOutOfStock = product.stock === 0;
+
+  // Aseguramos que tomamos el valor correcto del DTO que viene del BFF
+  const stock = product.stockTotal !== undefined ? product.stockTotal : (product.stock || 0);
+  const isOutOfStock = stock <= 0;
 
   const titulo = product.nombre || product.name;
   const precio = product.precio !== undefined ? product.precio : (product.price || 0);
@@ -26,12 +29,12 @@ export default function ProductCard({ product }) {
       </div>
 
       <div className="w-full text-center flex flex-col justify-end">
-        <span className="text-xs text-slate-500 font-mono mb-1">SKU: {product.sku}</span>
+        <span className="text-[10px] text-slate-400 font-mono mb-1">SKU: {product.sku} | STOCK: {stock}</span>
         <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-tight mb-2 group-hover:text-[#1E3859] transition-colors">
           {titulo}
         </h3>
         <span className="text-lg font-bold text-slate-900 mb-3">
-          ${precio.toLocaleString('es-CL')}
+          ${Number(precio).toLocaleString('es-CL')}
         </span>
       </div>
 
@@ -41,10 +44,10 @@ export default function ProductCard({ product }) {
           e.stopPropagation();
           addProduct(product);
         }}
-        style={{ backgroundColor: isOutOfStock ? '#cbd5e1' : theme.primary }}
-        className="w-[85%] text-white py-1.5 rounded-full border border-black text-sm font-medium transition-colors hover:opacity-90 disabled:cursor-not-allowed mt-auto shrink-0 z-10 cursor-pointer"
+        style={{ backgroundColor: isOutOfStock ? '#64748b' : theme.primary }}
+        className="w-[85%] text-white py-1.5 rounded-full border border-black text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mt-auto shrink-0 z-10 cursor-pointer"
       >
-        {isOutOfStock ? 'Sin Stock' : 'Agregar al carrito'}
+        {isOutOfStock ? 'Producto Agotado' : 'Agregar al carrito'}
       </button>
     </div>
   );

@@ -16,122 +16,107 @@ import com.smartlogix.bff.exception.ApiClientException;
 @Service
 public class InventarioClient {
 
-    private final RestClient restClient;
+        private final RestClient restClient;
 
-    public InventarioClient(
-            @Value("${inventario.url}") String inventarioUrl
-    ) {
+        public InventarioClient(
+                        @Value("${inventario.url}") String inventarioUrl) {
+                this.restClient = RestClient.builder()
+                                .baseUrl(inventarioUrl)
+                                .build();
+        }
 
-        this.restClient = RestClient.builder()
-                .baseUrl(inventarioUrl)
-                .build();
-    }
+        public InventarioDTO crearInventario(
+                        String token,
+                        InventarioRequestDTO request) {
 
-    public InventarioDTO crearInventario(
-            String token,
-            InventarioRequestDTO request
-    ) {
+                return restClient.post()
+                                .uri("/api/inventario")
+                                .header("Authorization", token)
+                                .body(request)
+                                .retrieve()
+                                .onStatus(
+                                                status -> status.isError(),
+                                                (clientRequest, response) -> {
+                                                        throw new ApiClientException(
+                                                                        response.getStatusCode(),
+                                                                        new String(response.getBody().readAllBytes()));
+                                                })
+                                .body(InventarioDTO.class);
+        }
 
-        return restClient.post()
-                .uri("/api/inventario")
-                .header("Authorization", token)
-                .body(request)
-                .retrieve()
-                .onStatus(
-                        status -> status.isError(),
-                        (clientRequest, response) -> {
-                        throw new ApiClientException(
-                                response.getStatusCode(),
-                                new String(response.getBody().readAllBytes())
-                        );
-                        }
-                )
-                .body(InventarioDTO.class);
-    }
+        public InventarioDTO obtenerPorSku(
+                        String token,
+                        String sku) {
 
-    public InventarioDTO obtenerPorSku(
-            String token,
-            String sku
-    ) {
+                return restClient.get()
+                                .uri("/api/inventario/{sku}", sku)
+                                .header("Authorization", token)
+                                .retrieve()
+                                .onStatus(
+                                                status -> status.isError(),
+                                                (clientRequest, response) -> {
+                                                        throw new ApiClientException(
+                                                                        response.getStatusCode(),
+                                                                        new String(response.getBody().readAllBytes()));
+                                                })
+                                .body(InventarioDTO.class);
+        }
 
-        return restClient.get()
-                .uri("/api/inventario/{sku}", sku)
-                .header("Authorization", token)
-                .retrieve()
-                .onStatus(
-                        status -> status.isError(),
-                        (clientRequest, response) -> {
-                        throw new ApiClientException(
-                                response.getStatusCode(),
-                                new String(response.getBody().readAllBytes())
-                        );
-                        }
-                )
-                .body(InventarioDTO.class);
-    }
+        public List<InventarioDTO> obtenerPorBodega(
+                        String token,
+                        Long bodegaId) {
 
-    public List<InventarioDTO> obtenerPorBodega(
-            String token,
-            Long bodegaId
-    ) {
+                return restClient.get()
+                                .uri("/api/inventario/bodega/{bodegaId}", bodegaId)
+                                .header("Authorization", token)
+                                .retrieve()
+                                .onStatus(
+                                                status -> status.isError(),
+                                                (clientRequest, response) -> {
+                                                        throw new ApiClientException(
+                                                                        response.getStatusCode(),
+                                                                        new String(response.getBody().readAllBytes()));
+                                                })
+                                .body(new ParameterizedTypeReference<>() {
+                                });
+        }
 
-        return restClient.get()
-                .uri("/api/inventario/bodega/{bodegaId}", bodegaId)
-                .header("Authorization", token)
-                .retrieve()
-                .onStatus(
-                        status -> status.isError(),
-                        (clientRequest, response) -> {
-                        throw new ApiClientException(
-                                response.getStatusCode(),
-                                new String(response.getBody().readAllBytes())
-                        );
-                        }
-                )
-                .body(new ParameterizedTypeReference<>() {});
-    }
+        public InventarioDTO ajusteManual(
+                        String token,
+                        Long id,
+                        AjusteRequestDTO request) {
 
-    public InventarioDTO ajusteManual(
-            String token,
-            Long id,
-            AjusteRequestDTO request
-    ) {
+                return restClient.post()
+                                .uri("/api/inventario/{id}/ajuste", id)
+                                .header("Authorization", token)
+                                .body(request)
+                                .retrieve()
+                                .onStatus(
+                                                status -> status.isError(),
+                                                (clientRequest, response) -> {
+                                                        throw new ApiClientException(
+                                                                        response.getStatusCode(),
+                                                                        new String(response.getBody().readAllBytes()));
+                                                })
+                                .body(InventarioDTO.class);
+        }
 
-        return restClient.post()
-                .uri("/api/inventario/{id}/ajuste", id)
-                .header("Authorization", token)
-                .body(request)
-                .retrieve()
-                .onStatus(
-                        status -> status.isError(),
-                        (clientRequest, response) -> {
-                        throw new ApiClientException(
-                                response.getStatusCode(),
-                                new String(response.getBody().readAllBytes())
-                        );
-                        }
-                )
-                .body(InventarioDTO.class);
-    }
+        public List<MovimientoDTO> obtenerMovimientos(
+                        String token,
+                        Long id) {
 
-    public List<MovimientoDTO> obtenerMovimientos(
-            String token,
-            Long id
-    ) {
-
-        return restClient.get()
-                .uri("/api/inventario/{id}/movimientos", id)
-                .header("Authorization", token)
-                .retrieve()
-                .onStatus(
-                        status -> status.isError(),
-                        (clientRequest, response) -> {
-                        throw new ApiClientException(
-                                response.getStatusCode(),
-                                new String(response.getBody().readAllBytes())
-                        );
-                        }
-                )
-                .body(new ParameterizedTypeReference<>() {});
-    }
+                return restClient.get()
+                                .uri("/api/inventario/{id}/movimientos", id)
+                                .header("Authorization", token)
+                                .retrieve()
+                                .onStatus(
+                                                status -> status.isError(),
+                                                (clientRequest, response) -> {
+                                                        throw new ApiClientException(
+                                                                        response.getStatusCode(),
+                                                                        new String(response.getBody().readAllBytes()));
+                                                })
+                                .body(new ParameterizedTypeReference<>() {
+                                });
+        }
 }

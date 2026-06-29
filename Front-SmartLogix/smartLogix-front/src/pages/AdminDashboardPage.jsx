@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
-  const { crearNuevoProducto, actualizarProducto, products } = useProductContext();
+  const { crearNuevoProducto, actualizarProducto, eliminarProducto, products } = useProductContext();
 
   const [form, setForm] = useState({
     sku: '', nombre: '', categoria: 'perifericos', precio: '', stock: '', imagenUrl: '', descripcion: ''
@@ -14,6 +14,7 @@ export default function AdminDashboardPage() {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [alerta, setAlerta] = useState({ tipo: '', texto: '' });
+  const [modalEliminar, setModalEliminar] = useState(null);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -25,11 +26,11 @@ export default function AdminDashboardPage() {
       nombre: p.nombre || '',
       categoria: (p.categoria || 'tecnologia').toLowerCase(),
       precio: p.precio || '',
-      stock: '99', 
+      stock: '99',
       imagenUrl: p.imagenes?.[0] || '',
       descripcion: p.descripcion || ''
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelarEdicion = () => {
@@ -48,6 +49,25 @@ export default function AdminDashboardPage() {
       imagenUrl: 'https://images.unsplash.com/photo-1626218174358-7769486c4b79?w=600&auto=format&fit=crop&q=60',
       descripcion: 'Diseño ultraligero de panal (59g), sensor Pixart 3335 hasta 16000 DPI, switches TTC Golden.'
     });
+  };
+
+  const ejecutarEliminacion = async () => {
+    if (!modalEliminar) return;
+    setAlerta({ tipo: '', texto: '' });
+    setCargando(true);
+    const skuTarget = modalEliminar.sku;
+
+    try {
+      await eliminarProducto(skuTarget);
+      setAlerta({ tipo: 'exito', texto: `¡Contrato SKU [${skuTarget}] purgado de la base de datos!` });
+      if (form.sku === skuTarget) cancelarEdicion();
+      setModalEliminar(null);
+    } catch (error) {
+      setAlerta({ tipo: 'error', texto: error.message });
+      setModalEliminar(null);
+    } finally {
+      setCargando(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -72,9 +92,8 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 select-none">
+    <div className="max-w-7xl mx-auto px-4 py-8 select-none relative">
       
-      {/* CABECERA */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#1E3859] text-white p-6 rounded-3xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6">
         <div>
           <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase block">Terminal Logística v2.4</span>
@@ -86,9 +105,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* =========================================================================
-          BARRA DE NAVEGACIÓN ENTRE MICROSERVICIOS (ADMINISTRADOR)
-          ========================================================================= */}
       <div className="flex flex-wrap items-center justify-between bg-slate-100 p-4 rounded-2xl border-2 border-black mb-8 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -103,10 +119,8 @@ export default function AdminDashboardPage() {
         </Link>
       </div>
 
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {/* COLUMNA IZQUIERDA: FORMULARIO DINÁMICO */}
         <div className={`lg:col-span-2 p-6 sm:p-8 rounded-3xl border-2 border-black transition-colors ${
           modoEdicion ? 'bg-amber-50/40 border-amber-600 shadow-[6px_6px_0px_0px_rgba(217,119,6,1)]' : 'bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]'
         }`}>
@@ -146,7 +160,6 @@ export default function AdminDashboardPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold text-slate-700">
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block uppercase tracking-wider mb-1 font-mono flex justify-between">
@@ -197,19 +210,32 @@ export default function AdminDashboardPage() {
               <textarea name="descripcion" rows="3" required value={form.descripcion} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-normal text-slate-800 text-xs"></textarea>
             </div>
 
-            <button
-              type="submit" disabled={cargando}
-              className={`w-full text-white py-4 rounded-xl border-2 border-black font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer mt-4 ${
-                modoEdicion ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#1E3859]'
-              }`}
-            >
-              {cargando ? 'Transmitiendo...' : modoEdicion ? `💾 Sobreescribir Ficha [${form.sku}]` : '⚡ Inyectar SKU a la Base de Datos'}
-            </button>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit" disabled={cargando}
+                className={`flex-1 text-white py-4 rounded-xl border-2 border-black font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer ${
+                  modoEdicion ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#1E3859]'
+                }`}
+              >
+                {cargando ? 'Transmitiendo...' : modoEdicion ? `💾 Sobreescribir Ficha [${form.sku}]` : '⚡ Inyectar SKU a la Base de Datos'}
+              </button>
+
+              {modoEdicion && (
+                <button
+                  type="button"
+                  disabled={cargando}
+                  onClick={() => setModalEliminar({ sku: form.sku, nombre: form.nombre })}
+                  className="px-6 bg-red-600 hover:bg-red-700 text-white rounded-xl border-2 border-black font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex items-center justify-center text-base"
+                  title="Dar de baja este ítem"
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
+
           </form>
         </div>
 
-
-        {/* COLUMNA DERECHA: RADAR CON CLIC PARA EDITAR */}
         <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-3xl border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
@@ -221,7 +247,7 @@ export default function AdminDashboardPage() {
             
             <p className="text-[10px] font-mono text-amber-400/80 mb-4 flex items-center gap-1.5 bg-amber-400/10 p-2 rounded-lg border border-amber-400/20">
               <span>💡</span>
-              <span>Haz clic sobre cualquier ítem de la lista para cargarlo en el editor.</span>
+              <span>Haz clic para editar, o usa el basurero para baja rápida.</span>
             </p>
 
             <div className="space-y-2.5 max-h-[440px] overflow-y-auto pr-1">
@@ -241,9 +267,23 @@ export default function AdminDashboardPage() {
                     </span>
                     <span className="font-bold text-slate-200 truncate block text-xs">{p.nombre}</span>
                   </div>
-                  <div className="text-right shrink-0">
+
+                  <div className="text-right shrink-0 flex flex-col items-end gap-1">
                     <span className="font-mono font-black text-amber-400 block">${p.precio}</span>
-                    <span className="text-[9px] bg-slate-700 text-slate-300 px-1 py-0.5 rounded uppercase font-mono">{p.categoria}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] bg-slate-700 text-slate-300 px-1 py-0.5 rounded uppercase font-mono">{p.categoria}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalEliminar(p);
+                        }}
+                        className="text-slate-500 hover:text-red-400 transition-colors p-0.5"
+                        title="Eliminar SKU"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -258,6 +298,54 @@ export default function AdminDashboardPage() {
         </div>
 
       </div>
+
+      {modalEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="bg-white border-4 border-black rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-[8px_8px_0px_0px_rgba(220,38,38,1)] text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+            
+            <div className="flex items-center gap-3 border-b-2 border-black pb-4 mb-4">
+              <span className="text-3xl">⚠️</span>
+              <div>
+                <span className="text-[10px] font-mono font-black text-red-600 tracking-widest uppercase block">Advertencia Crítica</span>
+                <h3 className="text-lg font-black uppercase tracking-wide">Protocolo de Baja</h3>
+              </div>
+            </div>
+
+            <p className="text-xs font-mono text-slate-600 mb-3">
+              ¿Confirmas la destrucción permanente del contrato gRPC para el ítem?
+            </p>
+
+            <div className="bg-slate-100 border-2 border-black p-3 rounded-xl mb-6 font-mono text-xs">
+              <span className="text-red-600 font-bold block">[{modalEliminar.sku}]</span>
+              <span className="font-black text-slate-900">{modalEliminar.nombre}</span>
+            </div>
+
+            <p className="text-[10px] font-mono text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-300 mb-6">
+              * Esto purgará el registro del Catálogo (8084) y romperá la coherencia del Kardex (8083). Esta acción no se puede revertir.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={cargando}
+                onClick={() => setModalEliminar(null)}
+                className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 font-mono text-xs font-black uppercase rounded-xl border-2 border-black cursor-pointer transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={cargando}
+                onClick={ejecutarEliminacion}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-mono text-xs font-black uppercase tracking-wider rounded-xl border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none cursor-pointer transition-all"
+              >
+                {cargando ? 'Destruyendo...' : 'Confirmar Baja'}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
