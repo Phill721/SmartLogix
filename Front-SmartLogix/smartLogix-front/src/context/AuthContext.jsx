@@ -8,6 +8,10 @@ export function AuthProvider({ children }) {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem('smartlogix_token');
+  });
+
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return !!localStorage.getItem('smartlogix_token');
   });
@@ -17,7 +21,7 @@ export function AuthProvider({ children }) {
       const response = await fetch('/api/bff/usuarios/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailInput, contrasena: contrasenaInput }), 
+        body: JSON.stringify({ email: emailInput, contrasena: contrasenaInput }),
       });
 
       if (!response.ok) throw new Error('Credenciales rechazadas por la bodega central.');
@@ -34,6 +38,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('smartlogix_user', JSON.stringify(usuarioFormateado));
 
       setUser(usuarioFormateado);
+      setToken(data.token);
       setIsAuthenticated(true);
       return usuarioFormateado;
     } catch (error) {
@@ -47,19 +52,19 @@ export function AuthProvider({ children }) {
       const response = await fetch('/api/bff/usuarios/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           nombre: nombre,
-          email: email, 
+          email: email,
           contrasena: password,
-          rol: 'USUARIO' // <-- SOLUCIÓN AL ERROR: Java exige este dato
-        }), 
+          rol: 'USUARIO'
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `Rechazo del servidor (${response.status})`);
       }
-      
+
       return true;
     } catch (error) {
       console.error('Register Error:', error.message);
@@ -71,11 +76,12 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('smartlogix_token');
     localStorage.removeItem('smartlogix_user');
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, register }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

@@ -85,7 +85,7 @@ export default function PaymentModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/50 flex justify-center items-center p-5">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-center items-center p-5">
 
             <div
                 className="w-full max-w-xl bg-white rounded-3xl border-2 shadow-2xl overflow-hidden animate-[fadeIn_.2s]"

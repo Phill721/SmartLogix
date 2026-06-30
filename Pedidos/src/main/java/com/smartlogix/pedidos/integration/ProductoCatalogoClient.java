@@ -23,7 +23,7 @@ public class ProductoCatalogoClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${app.productos.base-url:http://localhost:8084}")
+    @Value("${productos.url}")
     private String productosBaseUrl;
 
     public void validarSkuExistente(String sku) {

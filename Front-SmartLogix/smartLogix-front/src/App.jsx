@@ -17,6 +17,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminPedidosPage from './pages/AdminPedidosPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import UserDashboardPage from './pages/UserDashboardPage';
 
@@ -45,6 +46,7 @@ export default function App() {
                 <Route element={<ProtectedRoute allowedRoles={['ADMINISTRADOR']} />}>
                   <Route path="admin/dashboard" element={<AdminDashboardPage />} />
                   <Route path="admin/usuarios" element={<AdminUsersPage />} />
+                  <Route path="admin/pedidos" element={<AdminPedidosPage />} />
                 </Route>
 
                 {/* Nivel Operativo (Admin + Vendedor) */}
