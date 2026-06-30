@@ -1,0 +1,43 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CartContext > Snapshot tests > debe renderizar CartProvider correctamente 1`] = `
+<div>
+  <div>
+    <div
+      data-testid="cart-count"
+    >
+      0
+    </div>
+    <div
+      data-testid="cart-total"
+    >
+      0
+    </div>
+    <div
+      data-testid="cart-items"
+    >
+      0
+    </div>
+    <button
+      data-testid="add-product-btn"
+    >
+      Add Product
+    </button>
+    <button
+      data-testid="remove-product-btn"
+    >
+      Remove Product
+    </button>
+    <button
+      data-testid="update-quantity-btn"
+    >
+      Update Quantity
+    </button>
+    <button
+      data-testid="clear-cart-btn"
+    >
+      Clear Cart
+    </button>
+  </div>
+</div>
+`;

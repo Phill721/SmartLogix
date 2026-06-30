@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ProtectedRoute Component > Snapshot tests > debe renderizar ProtectedRoute correctamente cuando no está autenticado 1`] = `<div />`;

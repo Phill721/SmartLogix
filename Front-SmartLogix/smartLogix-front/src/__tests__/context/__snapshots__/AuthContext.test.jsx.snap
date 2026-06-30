@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AuthContext > Snapshot tests > debe renderizar AuthProvider correctamente 1`] = `
+<div>
+  <div>
+    <div
+      data-testid="auth-status"
+    >
+      No autenticado
+    </div>
+    <button
+      data-testid="logout-btn"
+    >
+      Logout
+    </button>
+    <button
+      data-testid="login-btn"
+    >
+      Login
+    </button>
+    <button
+      data-testid="register-btn"
+    >
+      Register
+    </button>
+  </div>
+</div>
+`;

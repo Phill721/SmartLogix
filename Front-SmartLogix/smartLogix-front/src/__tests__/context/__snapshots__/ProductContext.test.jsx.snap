@@ -1,0 +1,13 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ProductContext > Snapshot tests > debe renderizar ProductProvider correctamente 1`] = `
+<div>
+  <div
+    data-testid="test-component"
+  >
+    <p>
+      Product Provider Test
+    </p>
+  </div>
+</div>
+`;
