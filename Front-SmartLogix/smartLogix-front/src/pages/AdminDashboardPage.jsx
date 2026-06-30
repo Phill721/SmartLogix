@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
         setAlerta({ tipo: 'exito', texto: `¡SKU [${form.sku}] actualizado correctamente en base de datos!` });
       } else {
         await crearNuevoProducto(form);
-        setAlerta({ tipo: 'exito', texto: `¡SKU [${form.sku}] creado e inyectado a Bodega 1!` });
+        setAlerta({ tipo: 'exito', texto: `¡SKU [${form.sku}] creado correctamente en el catálogo!` });
       }
       cancelarEdicion();
     } catch (error) {

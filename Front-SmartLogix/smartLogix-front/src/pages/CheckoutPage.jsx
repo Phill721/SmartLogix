@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useProductContext } from '../context/ProductContext';
 import { theme } from '../theme/colors';
+import PaymentModal from "../components/PaymentModal";
 
 export default function CheckoutPage() {
   const { cart, cartTotal, cartCount, clearCart } = useCart();
@@ -28,6 +29,7 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorPago, setErrorPago] = useState('');
+  const [mostrarPago, setMostrarPago] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -73,6 +75,55 @@ export default function CheckoutPage() {
     }
   };
 
+  const confirmarPago = async () => {
+    setMostrarPago(false);
+
+    setLoading(true);
+    setErrorPago("");
+
+    await new Promise((res) => setTimeout(res, 1200));
+
+    try {
+
+      for (const item of cart) {
+        await actualizarStock(item.sku, item.cantidad);
+      }
+
+      const nuevaOrden = {
+        id: `SMLX-${Math.floor(100000 + Math.random() * 900000)}`,
+        fecha: new Date().toLocaleDateString("es-CL"),
+        cliente: formData,
+        items: cart.map((item) => ({
+          ...item,
+          nombre: item.nombreProducto,
+          quantity: item.cantidad,
+          precio: item.precioUnitario,
+        })),
+        subtotal: cartTotal,
+        envio: costoEnvio,
+        total: totalFinal,
+        metodo: formData.metodoPago,
+      };
+
+      clearCart();
+
+      navigate("/exito", {
+        state: {
+          orden: nuevaOrden,
+        },
+      });
+
+    } catch (error) {
+
+      setErrorPago(
+        `Error al procesar la orden: ${error.message}`
+      );
+
+      setLoading(false);
+
+    }
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
       <div className="mb-6">
@@ -84,7 +135,10 @@ export default function CheckoutPage() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        setMostrarPago(true);
+      }} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
         {/* COLUMNA IZQUIERDA */}
         <div className="lg:col-span-7 bg-white border-2 border-black rounded-3xl p-6 md:p-8 shadow-xl space-y-8">
@@ -262,6 +316,13 @@ export default function CheckoutPage() {
         </div>
 
       </form>
+      <PaymentModal
+        isOpen={mostrarPago}
+        total={totalFinal}
+        metodo={formData.metodoPago}
+        onCancel={() => setMostrarPago(false)}
+        onSuccess={confirmarPago}
+      />
     </div>
   );
 }

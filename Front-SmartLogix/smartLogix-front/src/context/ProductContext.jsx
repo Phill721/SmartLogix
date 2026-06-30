@@ -101,19 +101,7 @@ export function ProductProvider({ children }) {
       throw new Error(`[${resProd.status}] ${txt || 'Error en catálogo'}`);
     }
 
-    const cantidadNumerica = parseInt(form.stock, 10);
-    const dtoInventario = {
-      sku: skuLimpio,
-      stockTotal: cantidadNumerica,
-      umbralMinimo: 0,
-      bodegaId: 1
-    };
-
-    const resInv = await fetch('/api/bff/inventario', { method: 'POST', headers, body: JSON.stringify(dtoInventario) });
-    if (!resInv.ok) {
-      const txt = await resInv.text();
-      throw new Error(`[${resInv.status}] ${txt || 'Error en inventario'}`);
-    }
+    
 
     await cargarProductos();
   };
