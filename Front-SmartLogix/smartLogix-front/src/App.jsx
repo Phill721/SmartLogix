@@ -13,13 +13,14 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 
-// Admin/Ventas
+
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminInventoryPage from './pages/AdminInventoryPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminPedidosPage from './pages/AdminPedidosPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import UserDashboardPage from './pages/UserDashboardPage';
+import AdminVentasPage from './pages/AdminVentasPage';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
@@ -47,6 +48,7 @@ export default function App() {
                   <Route path="admin/dashboard" element={<AdminDashboardPage />} />
                   <Route path="admin/usuarios" element={<AdminUsersPage />} />
                   <Route path="admin/pedidos" element={<AdminPedidosPage />} />
+                  <Route path="admin/ventas" element={<AdminVentasPage />} />
                 </Route>
 
                 {/* Nivel Operativo (Admin + Vendedor) */}

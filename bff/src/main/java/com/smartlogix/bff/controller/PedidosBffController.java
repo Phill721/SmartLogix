@@ -28,107 +28,103 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PedidosBffController {
 
-    private final PedidosClient pedidosClient;
+        private final PedidosClient pedidosClient;
 
-    @GetMapping("/carrito")
-    public CarritoResponseDTO obtenerCarrito(
-            @RequestHeader("Authorization") String token
-    ) {
+        @GetMapping("/carrito")
+        public CarritoResponseDTO obtenerCarrito(
+                        @RequestHeader("Authorization") String token) {
 
-        return pedidosClient.obtenerCarrito(token);
-    }
+                return pedidosClient.obtenerCarrito(token);
+        }
 
-    @PostMapping("/carrito/agregar")
-    public CarritoResponseDTO agregarAlCarrito(
-            @RequestHeader("Authorization") String token,
-            @RequestBody AgregarAlCarritoRequestDTO request
-    ) {
+        @PostMapping("/carrito/agregar")
+        public CarritoResponseDTO agregarAlCarrito(
+                        @RequestHeader("Authorization") String token,
+                        @RequestBody AgregarAlCarritoRequestDTO request) {
 
-        return pedidosClient.agregarAlCarrito(token, request);
-    }
+                return pedidosClient.agregarAlCarrito(token, request);
+        }
 
-    @DeleteMapping("/carrito/items/{itemId}")
-    public CarritoResponseDTO removerDelCarrito(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long itemId
-    ) {
+        @DeleteMapping("/carrito/items/{itemId}")
+        public CarritoResponseDTO removerDelCarrito(
+                        @RequestHeader("Authorization") String token,
+                        @PathVariable Long itemId) {
 
-        return pedidosClient.removerDelCarrito(token, itemId);
-    }
+                return pedidosClient.removerDelCarrito(token, itemId);
+        }
 
-    @PutMapping("/carrito/items/{itemId}")
-    public CarritoResponseDTO actualizarCantidad(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long itemId,
-            @RequestParam Integer cantidad
-    ) {
+        @PutMapping("/carrito/items/{itemId}")
+        public CarritoResponseDTO actualizarCantidad(
+                        @RequestHeader("Authorization") String token,
+                        @PathVariable Long itemId,
+                        @RequestParam Integer cantidad) {
 
-        return pedidosClient.actualizarCantidad(
-                token,
-                itemId,
-                cantidad
-        );
-    }
+                return pedidosClient.actualizarCantidad(
+                                token,
+                                itemId,
+                                cantidad);
+        }
 
-    @DeleteMapping("/carrito/vaciar")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void vaciarCarrito(
-            @RequestHeader("Authorization") String token
-    ) {
+        @DeleteMapping("/carrito/vaciar")
+        @ResponseStatus(HttpStatus.NO_CONTENT)
+        public void vaciarCarrito(
+                        @RequestHeader("Authorization") String token) {
 
-        pedidosClient.vaciarCarrito(token);
-    }
+                pedidosClient.vaciarCarrito(token);
+        }
 
-    @PostMapping("/pedidos")
-    @ResponseStatus(HttpStatus.CREATED)
-    public PedidoResponseDTO crearPedido(
-            @RequestHeader("Authorization") String token,
-            @RequestBody CrearPedidoRequestDTO request
-    ) {
+        @PostMapping("/pedidos")
+        @ResponseStatus(HttpStatus.CREATED)
+        public PedidoResponseDTO crearPedido(
+                        @RequestHeader("Authorization") String token,
+                        @RequestBody CrearPedidoRequestDTO request) {
 
-        return pedidosClient.crearPedido(token, request);
-    }
+                return pedidosClient.crearPedido(token, request);
+        }
 
-    @PostMapping("/pedidos/{pedidoId}/confirmar")
-    public PedidoResponseDTO confirmarPedido(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long pedidoId
-    ) {
+        @PostMapping("/pedidos/{pedidoId}/confirmar")
+        public PedidoResponseDTO confirmarPedido(
+                        @RequestHeader("Authorization") String token,
+                        @PathVariable Long pedidoId) {
 
-        return pedidosClient.confirmarPedido(token, pedidoId);
-    }
+                return pedidosClient.confirmarPedido(token, pedidoId);
+        }
 
-    @PostMapping("/pedidos/{pedidoId}/cancelar")
-    public PedidoResponseDTO cancelarPedido(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long pedidoId
-    ) {
+        @PostMapping("/pedidos/{pedidoId}/cancelar")
+        public PedidoResponseDTO cancelarPedido(
+                        @RequestHeader("Authorization") String token,
+                        @PathVariable Long pedidoId) {
 
-        return pedidosClient.cancelarPedido(token, pedidoId);
-    }
+                return pedidosClient.cancelarPedido(token, pedidoId);
+        }
 
-    @GetMapping("/pedidos/{pedidoId}")
-    public PedidoResponseDTO obtenerPedido(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long pedidoId
-    ) {
+        @GetMapping("/pedidos/{pedidoId}")
+        public PedidoResponseDTO obtenerPedido(
+                        @RequestHeader("Authorization") String token,
+                        @PathVariable Long pedidoId) {
 
-        return pedidosClient.obtenerPedido(token, pedidoId);
-    }
+                return pedidosClient.obtenerPedido(token, pedidoId);
+        }
 
-    @GetMapping("/pedidos")
-    public PageResponseDTO<PedidoListaResponseDTO> listarPedidos(
-            @RequestHeader("Authorization") String token,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(required = false) String estado
-    ) {
+        @GetMapping("/pedidos")
+        public PageResponseDTO<PedidoListaResponseDTO> listarPedidos(
+                        @RequestHeader("Authorization") String token,
+                        @RequestParam(defaultValue = "0") Integer page,
+                        @RequestParam(defaultValue = "20") Integer size,
+                        @RequestParam(required = false) String estado) {
 
-        return pedidosClient.listarPedidos(
-                token,
-                page,
-                size,
-                estado
-        );
-    }
+                return pedidosClient.listarPedidos(
+                                token,
+                                page,
+                                size,
+                                estado);
+        }
+
+        @GetMapping("/pedidos/admin/todos")
+        public PageResponseDTO<PedidoListaResponseDTO> listarTodos(
+                        @RequestHeader("Authorization") String token,
+                        @RequestParam(defaultValue = "0") Integer page,
+                        @RequestParam(defaultValue = "20") Integer size) {
+                return pedidosClient.listarTodos(token, page, size);
+        }
 }

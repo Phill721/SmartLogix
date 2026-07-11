@@ -13,15 +13,16 @@ import {
 const ESTADOS = ['TODOS', 'PENDIENTE', 'CONFIRMADO', 'EN_PROCESO', 'ENVIADO', 'ENTREGADO', 'CANCELADO'];
 
 const ESTADO_META = {
-  PENDIENTE:   { color: 'text-amber-600',   bg: 'bg-amber-50   border-amber-200',   dot: 'bg-amber-400'   },
-  CONFIRMADO:  { color: 'text-blue-600',    bg: 'bg-blue-50    border-blue-200',     dot: 'bg-blue-400'    },
-  EN_PROCESO:  { color: 'text-violet-600',  bg: 'bg-violet-50  border-violet-200',   dot: 'bg-violet-400'  },
-  ENVIADO:     { color: 'text-cyan-600',    bg: 'bg-cyan-50    border-cyan-200',      dot: 'bg-cyan-400'    },
-  ENTREGADO:   { color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200',  dot: 'bg-emerald-400' },
-  CANCELADO:   { color: 'text-rose-600',    bg: 'bg-rose-50    border-rose-200',      dot: 'bg-rose-400'    },
+  PENDIENTE: { color: 'text-amber-600', bg: 'bg-amber-50   border-amber-200', dot: 'bg-amber-400' },
+  CONFIRMADO: { color: 'text-blue-600', bg: 'bg-blue-50    border-blue-200', dot: 'bg-blue-400' },
+  EN_PROCESO: { color: 'text-violet-600', bg: 'bg-violet-50  border-violet-200', dot: 'bg-violet-400' },
+  ENVIADO: { color: 'text-cyan-600', bg: 'bg-cyan-50    border-cyan-200', dot: 'bg-cyan-400' },
+  ENTREGADO: { color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-400' },
+  CANCELADO: { color: 'text-rose-600', bg: 'bg-rose-50    border-rose-200', dot: 'bg-rose-400' },
 };
 
-const meta = (estado) => ESTADO_META[estado] ?? { color: 'text-slate-500', bg: 'bg-slate-50 border-slate-200', dot: 'bg-slate-400' };
+const meta = (estado) =>
+  ESTADO_META[estado] ?? { color: 'text-slate-500', bg: 'bg-slate-50 border-slate-200', dot: 'bg-slate-400' };
 
 const formatPeso = (n) =>
   new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n ?? 0);
@@ -32,6 +33,18 @@ const formatFecha = (iso) => {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
+};
+
+// ─── Obtener usuario por ID ───────────────────────────────────────────────────
+
+const fetchUsuario = async (token, usuarioId) => {
+  const res = await fetch(`/api/bff/usuarios/${usuarioId}`, {
+    headers: {
+      Authorization: token?.startsWith('Bearer ') ? token : `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) return null;
+  return res.json();
 };
 
 // ─── Badge de estado ──────────────────────────────────────────────────────────
@@ -46,27 +59,103 @@ function EstadoBadge({ estado }) {
   );
 }
 
+// ─── Tarjeta del comprador ────────────────────────────────────────────────────
+
+function TarjetaComprador({ usuario, cargando }) {
+  if (cargando) {
+    return (
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-pulse">
+        <div className="h-3 bg-white/10 rounded w-1/2 mb-2" />
+        <div className="h-3 bg-white/10 rounded w-3/4" />
+      </div>
+    );
+  }
+
+  if (!usuario) {
+    return (
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+        <span className="text-[10px] font-mono text-slate-500">No se pudo cargar el comprador.</span>
+      </div>
+    );
+  }
+
+  const rolColor = {
+    ADMINISTRADOR: 'text-amber-300 bg-amber-400/10 border-amber-400/20',
+    VENDEDOR: 'text-violet-300 bg-violet-400/10 border-violet-400/20',
+    USUARIO: 'text-emerald-300 bg-emerald-400/10 border-emerald-400/20',
+  }[usuario.rol] ?? 'text-slate-300 bg-white/5 border-white/10';
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+      {/* Avatar + nombre */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#1E3859] border-2 border-white/20 flex items-center justify-center text-white font-black text-base shrink-0">
+          {(usuario.nombre?.[0] ?? '?').toUpperCase()}
+        </div>
+        <div className="overflow-hidden">
+          <span className="font-black text-sm text-white block truncate">{usuario.nombre}</span>
+          <span className="text-[10px] font-mono text-slate-400 truncate block">{usuario.email}</span>
+        </div>
+      </div>
+
+      {/* Detalles */}
+      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
+        <div className="bg-white/5 rounded-xl p-2">
+          <span className="text-slate-500 block mb-0.5">ID Usuario</span>
+          <span className="text-slate-200 font-bold">#{usuario.id}</span>
+        </div>
+        <div className="bg-white/5 rounded-xl p-2">
+          <span className="text-slate-500 block mb-0.5">Rol</span>
+          <span className={`font-bold px-1.5 py-0.5 rounded-md border text-[9px] ${rolColor}`}>
+            {usuario.rol}
+          </span>
+        </div>
+        <div className="bg-white/5 rounded-xl p-2">
+          <span className="text-slate-500 block mb-0.5">Estado</span>
+          <span className={`font-bold ${usuario.esActivo ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {usuario.esActivo ? '● Activo' : '● Inactivo'}
+          </span>
+        </div>
+        <div className="bg-white/5 rounded-xl p-2">
+          <span className="text-slate-500 block mb-0.5">Bloqueo</span>
+          <span className={`font-bold ${usuario.estadoBloqueo === 'SIN_BLOQUEO' ? 'text-slate-400' : 'text-rose-400'}`}>
+            {usuario.estadoBloqueo ?? '—'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Panel de detalle de pedido ───────────────────────────────────────────────
 
-function DetallePedido({ pedido, onConfirmar, onCancelar, cargandoAccion }) {
+function DetallePedido({ pedido, usuario, cargandoUsuario, onConfirmar, onCancelar, cargandoAccion }) {
   if (!pedido) return null;
 
   return (
-    <div className="bg-[#1E3859] text-white rounded-3xl p-6 border border-slate-700/40 drop-shadow-[0_20px_35px_rgba(30,56,89,0.25)]">
+    <div className="bg-[#1E3859] text-white rounded-3xl p-6 border border-slate-700/40 drop-shadow-[0_20px_35px_rgba(30,56,89,0.25)] space-y-5">
+
       {/* Header */}
-      <div className="flex justify-between items-start border-b border-white/10 pb-4 mb-5">
+      <div className="flex justify-between items-start border-b border-white/10 pb-4">
         <div>
           <span className="text-[10px] font-mono text-emerald-400 font-bold tracking-widest block">PEDIDO #{pedido.id}</span>
           <h3 className="text-base font-black uppercase tracking-tight mt-0.5">Ficha Técnica</h3>
-          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">Usuario ID: {pedido.usuarioId}</span>
         </div>
         <EstadoBadge estado={pedido.estado} />
       </div>
 
+      {/* Comprador */}
+      <div>
+        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-2">Comprador</span>
+        <TarjetaComprador usuario={usuario} cargando={cargandoUsuario} />
+      </div>
+
       {/* Items */}
-      <div className="mb-5">
-        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-2">Líneas de Pedido</span>
-        <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+      <div>
+        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-2">
+          Líneas de Pedido ({pedido.items?.length ?? 0})
+        </span>
+        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
           {(pedido.items ?? []).map((item, i) => (
             <div key={i} className="bg-white/5 border border-white/5 rounded-2xl p-3 flex items-center justify-between gap-3">
               <div className="overflow-hidden">
@@ -83,20 +172,20 @@ function DetallePedido({ pedido, onConfirmar, onCancelar, cargandoAccion }) {
       </div>
 
       {/* Total */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 flex justify-between items-center mb-5">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 flex justify-between items-center">
         <span className="font-mono text-[11px] text-slate-300 uppercase tracking-wider">Total del Pedido</span>
         <span className="font-mono font-black text-2xl text-amber-300">{formatPeso(pedido.total)}</span>
       </div>
 
       {/* Historial */}
       {pedido.historial?.length > 0 && (
-        <div className="mb-5">
+        <div>
           <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-2">Historial de Estados</span>
           <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
             {pedido.historial.map((h, i) => (
               <div key={i} className="flex items-center gap-2 bg-white/5 rounded-xl px-3 py-2">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${meta(h.estado).dot}`} />
-                <span className={`text-[10px] font-mono font-bold uppercase ${meta(h.estado).color.replace('600','400')}`}>{h.estado}</span>
+                <span className={`text-[10px] font-mono font-bold uppercase ${meta(h.estado).color.replace('600', '400')}`}>{h.estado}</span>
                 <span className="text-[10px] font-mono text-slate-500 ml-auto shrink-0">{formatFecha(h.fecha)}</span>
               </div>
             ))}
@@ -106,14 +195,14 @@ function DetallePedido({ pedido, onConfirmar, onCancelar, cargandoAccion }) {
 
       {/* Motivo rechazo */}
       {pedido.motivoRechazo && (
-        <div className="bg-rose-900/30 border border-rose-700/40 rounded-2xl p-3 mb-5">
+        <div className="bg-rose-900/30 border border-rose-700/40 rounded-2xl p-3">
           <span className="text-[10px] font-mono text-rose-400 font-bold block mb-1">MOTIVO DE RECHAZO</span>
           <p className="text-xs text-rose-200">{pedido.motivoRechazo}</p>
         </div>
       )}
 
       {/* Fechas */}
-      <div className="grid grid-cols-2 gap-2 mb-5 text-[10px] font-mono">
+      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
         <div className="bg-white/5 rounded-xl p-2.5">
           <span className="text-slate-500 block">Creado</span>
           <span className="text-slate-300 font-bold">{formatFecha(pedido.fechaCreacion)}</span>
@@ -145,7 +234,9 @@ function DetallePedido({ pedido, onConfirmar, onCancelar, cargandoAccion }) {
           </button>
         )}
         {!['PENDIENTE', 'CONFIRMADO'].includes(pedido.estado) && (
-          <p className="text-center w-full text-[10px] font-mono text-slate-500 py-2">Sin acciones disponibles para este estado.</p>
+          <p className="text-center w-full text-[10px] font-mono text-slate-500 py-2">
+            Sin acciones disponibles para este estado.
+          </p>
         )}
       </div>
     </div>
@@ -157,17 +248,21 @@ function DetallePedido({ pedido, onConfirmar, onCancelar, cargandoAccion }) {
 export default function AdminPedidosPage() {
   const { token, user } = useAuth();
 
-  const [pedidos, setPedidos]             = useState([]);
-  const [paginacion, setPaginacion]       = useState({ page: 0, size: 20, total: 0, totalPages: 0 });
-  const [filtroEstado, setFiltroEstado]   = useState('TODOS');
-  const [cargando, setCargando]           = useState(false);
-  const [alerta, setAlerta]              = useState({ tipo: '', texto: '' });
+  const [pedidos, setPedidos] = useState([]);
+  const [paginacion, setPaginacion] = useState({ page: 0, size: 20, total: 0, totalPages: 0 });
+  const [filtroEstado, setFiltroEstado] = useState('TODOS');
+  const [cargando, setCargando] = useState(false);
+  const [alerta, setAlerta] = useState({ tipo: '', texto: '' });
 
-  const [pedidoDetalle, setPedidoDetalle]       = useState(null);
-  const [cargandoDetalle, setCargandoDetalle]   = useState(false);
-  const [cargandoAccion, setCargandoAccion]     = useState(false);
+  const [pedidoDetalle, setPedidoDetalle] = useState(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
+  const [cargandoAccion, setCargandoAccion] = useState(false);
 
-  // ── Carga listado ──────────────────────────────────────────────────────────
+  // 👈 Estado del comprador
+  const [usuarioDetalle, setUsuarioDetalle] = useState(null);
+  const [cargandoUsuario, setCargandoUsuario] = useState(false);
+
+  // ── Carga listado ────────────────────────────────────────────────────────
   const cargarPedidos = useCallback(async (page = 0, estado = filtroEstado) => {
     setCargando(true);
     setAlerta({ tipo: '', texto: '' });
@@ -192,13 +287,24 @@ export default function AdminPedidosPage() {
     cargarPedidos(0, filtroEstado);
   }, [filtroEstado]); // eslint-disable-line
 
-  // ── Ver detalle ────────────────────────────────────────────────────────────
+  // ── Ver detalle ──────────────────────────────────────────────────────────
   const verDetalle = async (id) => {
-    if (pedidoDetalle?.id === id) { setPedidoDetalle(null); return; }
+    if (pedidoDetalle?.id === id) {
+      setPedidoDetalle(null);
+      setUsuarioDetalle(null);
+      return;
+    }
     setCargandoDetalle(true);
+    setUsuarioDetalle(null);
     try {
       const data = await obtenerPedido(token, id);
       setPedidoDetalle(data);
+      if (data.usuarioId) {
+        setCargandoUsuario(true);
+        fetchUsuario(token, data.usuarioId)
+          .then((u) => setUsuarioDetalle(u))
+          .finally(() => setCargandoUsuario(false));
+      }
     } catch (err) {
       setAlerta({ tipo: 'error', texto: err.message });
     } finally {
@@ -206,7 +312,7 @@ export default function AdminPedidosPage() {
     }
   };
 
-  // ── Confirmar ──────────────────────────────────────────────────────────────
+  // ── Confirmar ────────────────────────────────────────────────────────────
   const handleConfirmar = async (id) => {
     setCargandoAccion(true);
     try {
@@ -221,7 +327,7 @@ export default function AdminPedidosPage() {
     }
   };
 
-  // ── Cancelar ───────────────────────────────────────────────────────────────
+  // ── Cancelar ─────────────────────────────────────────────────────────────
   const handleCancelar = async (id) => {
     setCargandoAccion(true);
     try {
@@ -236,7 +342,6 @@ export default function AdminPedidosPage() {
     }
   };
 
-  // ── Stats rápidas ──────────────────────────────────────────────────────────
   const countPor = (estado) => pedidos.filter((p) => p.estado === estado).length;
 
   return (
@@ -264,9 +369,12 @@ export default function AdminPedidosPage() {
           <span className="text-xs font-black text-slate-800 uppercase">📦 Kardex (8083)</span>
           <span className="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
         </Link>
-        <div className="bg-slate-100/80 border border-slate-200 p-4 rounded-2xl flex items-center justify-between opacity-60">
-          <span className="text-xs font-black text-slate-500 uppercase">📊 Ventas</span>
-        </div>
+        <Link
+          to="/admin/ventas"
+          className="bg-white hover:bg-slate-50 border border-slate-200 p-4 rounded-2xl drop-shadow-[0_8px_16px_rgba(30,56,89,0.08)] transition-all flex items-center justify-between group">
+          <span className="text-xs font-black text-slate-800 uppercase">📊 Ventas</span>
+          <span className="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
+        </Link>
         <div className="bg-[#1E3859] border border-[#1E3859] p-4 rounded-2xl flex items-center justify-between">
           <span className="text-xs font-black text-white uppercase">🚚 Pedidos Globales</span>
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -275,9 +383,8 @@ export default function AdminPedidosPage() {
 
       {/* ── Alerta ── */}
       {alerta.texto && (
-        <div className={`p-4 rounded-2xl border font-bold text-xs mb-6 ${
-          alerta.tipo === 'exito' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
-        }`}>
+        <div className={`p-4 rounded-2xl border font-bold text-xs mb-6 ${alerta.tipo === 'exito' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'
+          }`}>
           {alerta.tipo === 'exito' ? '✅ ' : '❌ '}{alerta.texto}
         </div>
       )}
@@ -290,9 +397,8 @@ export default function AdminPedidosPage() {
             <button
               key={e}
               onClick={() => setFiltroEstado(e === filtroEstado ? 'TODOS' : e)}
-              className={`border rounded-2xl p-3 text-left transition-all cursor-pointer ${
-                filtroEstado === e ? `${m.bg} ${m.color} scale-[1.03] drop-shadow-md` : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-              }`}
+              className={`border rounded-2xl p-3 text-left transition-all cursor-pointer ${filtroEstado === e ? `${m.bg} ${m.color} scale-[1.03] drop-shadow-md` : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                }`}
             >
               <span className={`w-2 h-2 rounded-full block mb-2 ${m.dot}`} />
               <span className="font-mono text-[10px] uppercase tracking-wider block">{e}</span>
@@ -307,7 +413,6 @@ export default function AdminPedidosPage() {
         {/* ── Tabla de pedidos ── */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl drop-shadow-[0_20px_35px_rgba(30,56,89,0.10)] overflow-hidden">
 
-          {/* Toolbar */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-4 border-b border-slate-100 gap-3">
             <div>
               <h2 className="text-sm font-black uppercase text-slate-800 tracking-tight">🚚 Pedidos Globales</h2>
@@ -315,7 +420,6 @@ export default function AdminPedidosPage() {
                 {paginacion.total} registros · página {paginacion.page + 1} de {Math.max(paginacion.totalPages, 1)}
               </p>
             </div>
-
             <div className="flex gap-2 items-center flex-wrap">
               <select
                 value={filtroEstado}
@@ -333,7 +437,6 @@ export default function AdminPedidosPage() {
             </div>
           </div>
 
-          {/* Listado */}
           {cargando ? (
             <div className="flex items-center justify-center py-20 text-slate-400 font-mono text-xs">
               <span className="animate-spin mr-2">⏳</span> Cargando registros...
@@ -351,34 +454,24 @@ export default function AdminPedidosPage() {
                   <button
                     key={p.id}
                     onClick={() => verDetalle(p.id)}
-                    className={`w-full text-left px-6 py-4 flex items-center gap-4 transition-all cursor-pointer group ${
-                      activo ? 'bg-slate-50' : 'hover:bg-slate-50/70'
-                    }`}
+                    className={`w-full text-left px-6 py-4 flex items-center gap-4 transition-all cursor-pointer group ${activo ? 'bg-slate-50' : 'hover:bg-slate-50/70'
+                      }`}
                   >
-                    {/* ID */}
                     <div className="shrink-0">
                       <span className="font-mono text-[10px] text-slate-400 block">ID</span>
                       <span className="font-mono font-black text-slate-800 text-sm">#{p.id}</span>
                     </div>
-
-                    {/* Estado */}
                     <div className="shrink-0">
                       <EstadoBadge estado={p.estado} />
                     </div>
-
-                    {/* Fecha */}
                     <div className="flex-1 min-w-0 hidden sm:block">
                       <span className="font-mono text-[10px] text-slate-400 block">Creado</span>
                       <span className="font-mono text-xs text-slate-600 truncate block">{formatFecha(p.fechaCreacion)}</span>
                     </div>
-
-                    {/* Total */}
                     <div className="shrink-0 text-right">
                       <span className="font-mono text-[10px] text-slate-400 block">Total</span>
                       <span className="font-mono font-black text-slate-900 text-sm">{formatPeso(p.total)}</span>
                     </div>
-
-                    {/* Chevron */}
                     <span className={`text-slate-300 text-xs shrink-0 transition-transform ${activo ? 'rotate-90' : 'group-hover:translate-x-0.5'}`}>
                       {activo ? '▼' : '›'}
                     </span>
@@ -388,7 +481,6 @@ export default function AdminPedidosPage() {
             </div>
           )}
 
-          {/* Paginación */}
           {paginacion.totalPages > 1 && (
             <div className="flex justify-center gap-2 p-4 border-t border-slate-100">
               <button
@@ -421,6 +513,8 @@ export default function AdminPedidosPage() {
           ) : pedidoDetalle ? (
             <DetallePedido
               pedido={pedidoDetalle}
+              usuario={usuarioDetalle}
+              cargandoUsuario={cargandoUsuario}
               onConfirmar={handleConfirmar}
               onCancelar={handleCancelar}
               cargandoAccion={cargandoAccion}

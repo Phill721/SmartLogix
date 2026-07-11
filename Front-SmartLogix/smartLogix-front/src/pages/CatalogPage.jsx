@@ -5,7 +5,7 @@ import ProductCard from '../components/catalog/ProductCard';
 
 export default function CatalogPage() {
   const { categoryName } = useParams();
-  const { products, getProductsByCategory, loadProducts } = useProductContext();
+  const { products, getProductsByCategory } = useProductContext();
   const [orden, setOrden] = useState('destacados');
   const [productosConStock, setProductosConStock] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -14,10 +14,8 @@ export default function CatalogPage() {
     const sincronizarCatalogo = async () => {
       setCargando(true);
 
-      // Esperamos que los productos estén disponibles
       const base = getProductsByCategory(categoryName || 'tecnologia');
 
-      // Si no hay productos aún, esperamos y no continuamos
       if (base.length === 0 && products.length === 0) {
         setCargando(false);
         return;
@@ -30,10 +28,28 @@ export default function CatalogPage() {
           const res = await fetch(`/api/bff/inventario/${prod.sku}`, {
             headers: token ? { 'Authorization': `Bearer ${token}` } : {}
           });
-          if (!res.ok) return { ...prod, stockTotal: 0 };
+
+          if (!res.ok) {
+            console.error(`❌ El servidor bloqueó la petición para ${prod.sku} (Código: ${res.status})`);
+            return { ...prod, stockTotal: 0 };
+          }
+
           const inv = await res.json();
-          return { ...prod, stockTotal: inv.stockTotal ?? inv.cantidad ?? 0 };
+          console.log(`📦 RESPUESTA KARDEX PARA [${prod.sku}]:`, inv);
+
+          // 🕵️‍♂️ ALGORITMO TODOTERRENO: Busca el stock sin importar cómo lo envíe Java
+          const stockReal = 
+            inv?.stockTotal ?? 
+            inv?.stock ?? 
+            inv?.cantidad ?? 
+            inv?.data?.stockTotal ?? 
+            inv?.data?.stock ?? 
+            0;
+
+          return { ...prod, stockTotal: stockReal };
+
         } catch (e) {
+          console.error(`🔥 Error de red al consultar kardex de ${prod.sku}:`, e);
           return { ...prod, stockTotal: 0 };
         }
       }));
@@ -43,7 +59,7 @@ export default function CatalogPage() {
     };
 
     sincronizarCatalogo();
-  }, [categoryName, products]); // ← clave: products como dependencia, no loadProducts
+  }, [categoryName, products]);
 
   const productosOrdenados = [...productosConStock].sort((a, b) => {
     const pA = a.precio !== undefined ? a.precio : (a.price || 0);
