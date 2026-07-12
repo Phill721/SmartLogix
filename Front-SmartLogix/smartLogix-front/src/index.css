@@ -21,3 +21,15 @@ html, body, #root {
         puedes forzar el tamaño de la baldosa aquí: */
   background-size: 300px; 
 }
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

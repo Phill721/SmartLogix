@@ -12,6 +12,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
+import MainPage from './pages/MainPage';
 
 
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -35,7 +36,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Layout />}>
-                <Route index element={<Navigate to="/categoria/tecnologia" replace />} />
+                <Route index element={<MainPage />} />
                 <Route path="categoria/:categoryName" element={<CatalogPage />} />
                 <Route path="/producto/:sku" element={<ProductDetailPage />} />
                 <Route path="buscar" element={<SearchPage />} />
