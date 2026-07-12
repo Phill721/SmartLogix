@@ -1,5 +1,14 @@
 package com.smartlogix.pedidos.service;
 
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.smartlogix.pedidos.dto.CrearPedidoRequestDTO;
 import com.smartlogix.pedidos.dto.PageResponse;
 import com.smartlogix.pedidos.dto.PedidoListaResponseDTO;
@@ -8,25 +17,21 @@ import com.smartlogix.pedidos.entity.Carrito;
 import com.smartlogix.pedidos.entity.Pedido;
 import com.smartlogix.pedidos.event.PedidoCanceladoEvent;
 import com.smartlogix.pedidos.event.PedidoCreadoEvent;
-import com.smartlogix.pedidos.exception.*;
+import com.smartlogix.pedidos.exception.CarritoNoEncontradoException;
+import com.smartlogix.pedidos.exception.CarritoVacioException;
+import com.smartlogix.pedidos.exception.CircuitBreakerAbiertoException;
+import com.smartlogix.pedidos.exception.EstadoPedidoInvalidoException;
+import com.smartlogix.pedidos.exception.PedidoNotFoundException;
+import com.smartlogix.pedidos.exception.StockInsuficienteException;
 import com.smartlogix.pedidos.kafka.PedidoKafkaProducer;
 import com.smartlogix.pedidos.mapper.PedidoMapper;
 import com.smartlogix.pedidos.model.EstadoPedido;
 import com.smartlogix.pedidos.repository.CarritoRepository;
 import com.smartlogix.pedidos.repository.PedidoRepository;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -54,15 +59,21 @@ public class PedidoService {
             throw new CarritoVacioException("El carrito no tiene productos");
         }
 
+        // Mapear los items del carrito al pedido (crea copias nuevas)
         Pedido pedido = mapper.toPedido(carrito);
         pedido.setUsuarioId(usuarioId);
         pedido.setEstado(EstadoPedido.PENDIENTE);
 
+        // Guardar el pedido con sus items
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
 
         // Registrar cambio de estado inicial
         pedidoGuardado.registrarCambioEstado(EstadoPedido.PENDIENTE, "Pedido creado");
         pedidoRepository.save(pedidoGuardado);
+
+        // Limpiar el carrito después de crear el pedido
+        carrito.vaciar();
+        carritoRepository.save(carrito);
 
         // Publicar evento
         publicarPedidoCreado(pedidoGuardado);
@@ -189,24 +200,35 @@ public class PedidoService {
     }
 
     private void publicarPedidoCreado(Pedido pedido) {
-        PedidoCreadoEvent event = PedidoCreadoEvent.builder()
-                .pedidoId(pedido.getId())
-                .usuarioId(pedido.getUsuarioId())
-                .estado(pedido.getEstado().toString())
-                .total(pedido.getTotal())
-                .timestamp(LocalDateTime.now())
-                .items(pedido.getItems().stream()
-                        .map(item -> PedidoCreadoEvent.ItemPedidoEvent.builder()
-                                .sku(item.getSku())
-                                .cantidad(item.getCantidad())
-                                .build())
-                        .collect(Collectors.toList()))
-                .build();
-
         try {
+            log.info("🔔 Iniciando publicación de evento PedidoCreado para pedidoId: {} con {} items", 
+                pedido.getId(), pedido.getItems().size());
+
+            PedidoCreadoEvent event = PedidoCreadoEvent.builder()
+                    .pedidoId(pedido.getId())
+                    .usuarioId(pedido.getUsuarioId())
+                    .estado(pedido.getEstado().toString())
+                    .total(pedido.getTotal())
+                    .timestamp(LocalDateTime.now())
+                    .items(pedido.getItems().stream()
+                            .map(item -> PedidoCreadoEvent.ItemPedidoEvent.builder()
+                                    .sku(item.getSku())
+                                    .cantidad(item.getCantidad())
+                                    .build())
+                            .collect(Collectors.toList()))
+                    .build();
+
+            log.info("📦 Evento construido: pedidoId={}, total={}, items={}", 
+                event.getPedidoId(), event.getTotal(), event.getItems().size());
+
             kafkaProducer.publicarPedidoCreado(event);
+            
+            log.info("✅ Evento PedidoCreado enviado a Kafka para pedidoId: {}", pedido.getId());
         } catch (Exception e) {
-            log.error("Error publicando evento PedidoCreado: {}", e.getMessage(), e);
+            log.error("❌ Error publicando evento PedidoCreado para pedidoId {}: {}", 
+                pedido.getId(), e.getMessage(), e);
+            // No relanzamos la excepción para no afectar la creación del pedido
+            // pero sí la registramos para que el usuario pueda verla
         }
     }
 

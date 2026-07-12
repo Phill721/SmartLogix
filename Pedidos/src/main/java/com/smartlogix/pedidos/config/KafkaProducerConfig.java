@@ -16,6 +16,10 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+
 @Configuration
 @EnableKafka
 public class KafkaProducerConfig {
@@ -25,12 +29,16 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaTemplate<String, PedidoCreadoEvent> kafkaTemplatePedidoCreado() {
-        return new KafkaTemplate<>(producerFactoryCreado());
+        KafkaTemplate<String, PedidoCreadoEvent> template = new KafkaTemplate<>(producerFactoryCreado());
+        template.setDefaultTopic("pedido-creado");
+        return template;
     }
 
     @Bean
     public KafkaTemplate<String, PedidoCanceladoEvent> kafkaTemplatePedidoCancelado() {
-        return new KafkaTemplate<>(producerFactoryCancelado());
+        KafkaTemplate<String, PedidoCanceladoEvent> template = new KafkaTemplate<>(producerFactoryCancelado());
+        template.setDefaultTopic("pedido-cancelado");
+        return template;
     }
 
     @Bean
@@ -42,6 +50,10 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
         configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 10000);
+        configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30000);
+        configProps.put(ProducerConfig.LINGER_MS_CONFIG, 10);
+        configProps.put(ProducerConfig.BATCH_SIZE_CONFIG, 32768);
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
@@ -54,6 +66,10 @@ public class KafkaProducerConfig {
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
         configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        configProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 10000);
+        configProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30000);
+        configProps.put(ProducerConfig.LINGER_MS_CONFIG, 10);
+        configProps.put(ProducerConfig.BATCH_SIZE_CONFIG, 32768);
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 

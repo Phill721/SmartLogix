@@ -95,6 +95,7 @@ public class InventarioServiceImpl implements InventarioService {
         registrarMovimiento(inv, TipoMovimiento.RESERVA, cantidad, "Reserva Pedido: " + pedidoId);
         verificarYNotificarStockBajo(inv);
         kafkaProducer.enviarEventoActualizacion(inv);
+        kafkaProducer.enviarEventoStockReservado(inv.getSku(), cantidad, pedidoId);
     }
 
     @Override
@@ -110,6 +111,7 @@ public class InventarioServiceImpl implements InventarioService {
 
         registrarMovimiento(inv, TipoMovimiento.LIBERACION, cantidad, "Liberación Pedido: " + pedidoId);
         kafkaProducer.enviarEventoActualizacion(inv);
+        kafkaProducer.enviarEventoStockLiberado(inv.getSku(), cantidad, pedidoId);
     }
 
     @Override

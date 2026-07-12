@@ -1,11 +1,23 @@
 package com.smartlogix.pedidos.mapper;
 
-import com.smartlogix.pedidos.dto.*;
-import com.smartlogix.pedidos.entity.*;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import java.util.stream.Collectors;
+import com.smartlogix.pedidos.dto.AgregarAlCarritoRequestDTO;
+import com.smartlogix.pedidos.dto.CarritoItemResponseDTO;
+import com.smartlogix.pedidos.dto.CarritoResponseDTO;
+import com.smartlogix.pedidos.dto.HistorialEstadoDTO;
+import com.smartlogix.pedidos.dto.ItemPedidoDTO;
+import com.smartlogix.pedidos.dto.PedidoListaResponseDTO;
+import com.smartlogix.pedidos.dto.PedidoResponseDTO;
+import com.smartlogix.pedidos.entity.Carrito;
+import com.smartlogix.pedidos.entity.CarritoItem;
+import com.smartlogix.pedidos.entity.HistorialEstadoPedido;
+import com.smartlogix.pedidos.entity.ItemPedido;
+import com.smartlogix.pedidos.entity.Pedido;
 
 @Component
 public class PedidoMapper {
@@ -15,10 +27,11 @@ public class PedidoMapper {
                 .carritoId(carrito.getId())
                 .build();
 
+        // Crear una nueva lista de items en vez de reutilizar la del carrito
         pedido.setItems(carrito.getItems().stream()
                 .map(this::toItemPedido)
                 .peek(item -> item.setPedido(pedido))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toCollection(ArrayList::new)));
 
         pedido.calcularTotal();
         return pedido;

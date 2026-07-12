@@ -256,3 +256,15 @@ services:
       - productos
       - inventario
       - pedidos
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+    networks:
+      - smartlogix-net
+    depends_on:
+      - kafka

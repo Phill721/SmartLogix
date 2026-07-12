@@ -45,4 +45,36 @@ public class InventarioKafkaProducer {
                     }
                 });
     }
+
+    public void enviarEventoStockReservado(String sku, int cantidad, String pedidoId) {
+        Map<String, Object> mensaje = new HashMap<>();
+        mensaje.put("pedidoId", pedidoId);
+        mensaje.put("sku", sku);
+        mensaje.put("cantidad", cantidad);
+
+        kafkaTemplate.send("stock-reservado", pedidoId, mensaje)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.warn("Error al enviar evento stock-reservado para pedido {}", pedidoId, ex);
+                    } else {
+                        log.info("Evento stock-reservado enviado para pedido {}", pedidoId);
+                    }
+                });
+    }
+
+    public void enviarEventoStockLiberado(String sku, int cantidad, String pedidoId) {
+        Map<String, Object> mensaje = new HashMap<>();
+        mensaje.put("pedidoId", pedidoId);
+        mensaje.put("sku", sku);
+        mensaje.put("cantidad", cantidad);
+
+        kafkaTemplate.send("stock-liberado", pedidoId, mensaje)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.warn("Error al enviar evento stock-liberado para pedido {}", pedidoId, ex);
+                    } else {
+                        log.info("Evento stock-liberado enviado para pedido {}", pedidoId);
+                    }
+                });
+    }
 }
