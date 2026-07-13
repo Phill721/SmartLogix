@@ -120,7 +120,7 @@ public class PedidosBffController {
                                 estado);
         }
 
-        @GetMapping("/pedidos/admin/todos")
+        @GetMapping("/admin/todos")
         public PageResponseDTO<PedidoListaResponseDTO> listarTodos(
                         @RequestHeader("Authorization") String token,
                         @RequestParam(defaultValue = "0") Integer page,

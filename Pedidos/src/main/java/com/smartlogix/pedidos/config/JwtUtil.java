@@ -2,7 +2,6 @@ package com.smartlogix.pedidos.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +29,7 @@ public class JwtUtil {
                     .build()
                     .parse(token)
                     .getBody();
-            
+
             Object usuarioId = claims.get("usuarioId");
             if (usuarioId != null) {
                 return Long.parseLong(usuarioId.toString());
@@ -52,6 +51,21 @@ public class JwtUtil {
             return claims.getSubject();
         } catch (Exception e) {
             log.error("Error extrayendo username del token: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public String extractRol(String token) {
+        try {
+            Claims claims = (Claims) Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parse(token)
+                    .getBody();
+            Object rol = claims.get("rol");
+            return rol != null ? rol.toString() : null;
+        } catch (Exception e) {
+            log.error("Error extrayendo rol del token: {}", e.getMessage());
             return null;
         }
     }

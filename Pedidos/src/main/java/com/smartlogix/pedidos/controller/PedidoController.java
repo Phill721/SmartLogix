@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -21,8 +22,7 @@ public class PedidoController {
     @PostMapping
     public ResponseEntity<PedidoResponseDTO> crearPedido(
             @Valid @RequestBody CrearPedidoRequestDTO request,
-            HttpServletRequest httpRequest
-    ) {
+            HttpServletRequest httpRequest) {
         Long usuarioId = (Long) httpRequest.getAttribute("usuarioId");
         log.info("Crear pedido solicitado por usuario: {}", usuarioId);
 
@@ -37,8 +37,7 @@ public class PedidoController {
     @PostMapping("/{pedidoId}/confirmar")
     public ResponseEntity<PedidoResponseDTO> confirmarPedido(
             @PathVariable Long pedidoId,
-            HttpServletRequest httpRequest
-    ) {
+            HttpServletRequest httpRequest) {
         Long usuarioId = (Long) httpRequest.getAttribute("usuarioId");
         log.info("Confirmar pedido: {} solicitado por usuario: {}", pedidoId, usuarioId);
 
@@ -53,8 +52,7 @@ public class PedidoController {
     @PostMapping("/{pedidoId}/cancelar")
     public ResponseEntity<PedidoResponseDTO> cancelarPedido(
             @PathVariable Long pedidoId,
-            HttpServletRequest httpRequest
-    ) {
+            HttpServletRequest httpRequest) {
         Long usuarioId = (Long) httpRequest.getAttribute("usuarioId");
         log.info("Cancelar pedido: {} solicitado por usuario: {}", pedidoId, usuarioId);
 
@@ -69,8 +67,7 @@ public class PedidoController {
     @GetMapping("/{pedidoId}")
     public ResponseEntity<PedidoResponseDTO> obtenerPedido(
             @PathVariable Long pedidoId,
-            HttpServletRequest httpRequest
-    ) {
+            HttpServletRequest httpRequest) {
         Long usuarioId = (Long) httpRequest.getAttribute("usuarioId");
         log.info("Obtener pedido: {} solicitado por usuario: {}", pedidoId, usuarioId);
 
@@ -87,8 +84,7 @@ public class PedidoController {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(required = false) String estado,
-            HttpServletRequest httpRequest
-    ) {
+            HttpServletRequest httpRequest) {
         Long usuarioId = (Long) httpRequest.getAttribute("usuarioId");
         log.info("Listar pedidos solicitado por usuario: {}", usuarioId);
 
@@ -107,13 +103,14 @@ public class PedidoController {
     }
 
     @GetMapping("/admin/todos")
+    @PreAuthorize("hasAuthority('ADMINISTRADOR')")
     public ResponseEntity<PageResponse<PedidoListaResponseDTO>> listarTodos(
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer size,
-            HttpServletRequest httpRequest
-    ) {
+            HttpServletRequest httpRequest) {
+
         Long usuarioId = (Long) httpRequest.getAttribute("usuarioId");
-        log.info("Listar todos los pedidos solicitado por usuario: {}", usuarioId);
+        log.info("Listar todos los pedidos solicitado por admin: {}", usuarioId);
 
         if (usuarioId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

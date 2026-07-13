@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  listarPedidos,
   obtenerPedido,
   confirmarPedido,
   cancelarPedido,
@@ -262,14 +261,30 @@ export default function AdminPedidosPage() {
   const [usuarioDetalle, setUsuarioDetalle] = useState(null);
   const [cargandoUsuario, setCargandoUsuario] = useState(false);
 
-  // ── Carga listado ────────────────────────────────────────────────────────
+  // ── Carga listado (Modificado para usar endpoint global) ──
   const cargarPedidos = useCallback(async (page = 0, estado = filtroEstado) => {
     setCargando(true);
     setAlerta({ tipo: '', texto: '' });
     try {
-      const estadoParam = estado === 'TODOS' ? undefined : estado;
-      const data = await listarPedidos(token, { page, size: paginacion.size, estado: estadoParam });
-      setPedidos(data.content ?? []);
+      // 🕵️‍♂️ EL CAMBIO CLAVE: Hacemos fetch directo a tu endpoint de administrador
+      const res = await fetch(`/api/bff/pedidos/admin/todos?page=${page}&size=${paginacion.size}`, {
+        headers: { 'Authorization': token?.startsWith('Bearer ') ? token : `Bearer ${token}` }
+      });
+
+      if (!res.ok) throw new Error("Acceso denegado o error al cargar historial global.");
+      
+      const data = await res.json();
+      let pedidosGlobales = data.content ?? [];
+
+      // 💡 TRUCO DE FRONTEND: Como tu endpoint /admin/todos en Java no acepta 
+      // el parámetro "estado", filtramos los resultados en la memoria de React 
+      // para que tus botones de colores (PENDIENTE, ENVIADO, etc.) funcionen perfecto.
+      if (estado !== 'TODOS') {
+        pedidosGlobales = pedidosGlobales.filter(p => p.estado === estado);
+      }
+
+      setPedidos(pedidosGlobales);
+      
       setPaginacion((prev) => ({
         ...prev,
         page: data.number ?? page,
@@ -285,7 +300,7 @@ export default function AdminPedidosPage() {
 
   useEffect(() => {
     cargarPedidos(0, filtroEstado);
-  }, [filtroEstado]); // eslint-disable-line
+  }, [filtroEstado, cargarPedidos]); // eslint-disable-line
 
   // ── Ver detalle ──────────────────────────────────────────────────────────
   const verDetalle = async (id) => {

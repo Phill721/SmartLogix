@@ -70,7 +70,7 @@ export default function AdminVentasPage() {
       setError('');
       try {
         const authHeader = token?.startsWith('Bearer ') ? token : `Bearer ${token}`;
-        const res = await fetch(`/api/bff/pedidos/pedidos/admin/todos?page=${pagina}&size=50`, {
+        const res = await fetch(`/api/bff/pedidos/admin/todos?page=${pagina}&size=50`, {
           headers: { Authorization: authHeader },
         });
         if (!res.ok) throw new Error(`Error ${res.status}`);
